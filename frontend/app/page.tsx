@@ -8,12 +8,15 @@ type ChatMessage = {
 };
 
 const API_URL = process.env.NEXT_PUBLIC_AGENT_API_URL || "http://localhost:4000/api/chat";
+const COURSE_ID = process.env.NEXT_PUBLIC_COURSE_ID || "mi-curso";
+const LESSON_ID = process.env.NEXT_PUBLIC_LESSON_ID || "modulo-1";
 
 export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hola, soy tu agente del curso. Preguntame sobre la leccion 1 de geo-basico."
+      content:
+        "Hola, soy tu agente del curso. Cuando me indiques el archivo de la leccion, respondere solo con ese contenido."
     }
   ]);
   const [input, setInput] = useState("");
@@ -35,8 +38,8 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: trimmed,
-          courseId: "geo-basico",
-          lessonId: "leccion-1"
+          courseId: COURSE_ID,
+          lessonId: LESSON_ID
         })
       });
 
@@ -63,16 +66,33 @@ export default function HomePage() {
 
   return (
     <main className="container">
-      <h1>Agente Educativo Local</h1>
-      <p>Arquitectura lista para conectar Open edX y Vtiger despues, via backend.</p>
+      <section className="hero">
+        <h1>Geobot</h1>
+        <p>Soy tu agente de apoyo para resolver dudas del curso de forma clara y rapida.</p>
+      </section>
 
-      <section className="chat-box">
+      <section className="phone-shell">
+        <header className="chat-header">
+          <img className="bot-avatar" src="/agent-avatar.png" alt="Avatar del agente" />
+          <div>
+            <strong>Tutor Virtual</strong>
+            <p>En linea</p>
+          </div>
+        </header>
+
         <div className="messages">
           {messages.map((message, index) => (
             <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
               {message.content}
             </article>
           ))}
+          {loading && (
+            <article className="message assistant typing" aria-live="polite" aria-label="Geobot escribiendo">
+              <span className="dot" />
+              <span className="dot" />
+              <span className="dot" />
+            </article>
+          )}
         </div>
 
         <form className="form" onSubmit={onSubmit}>
@@ -80,10 +100,33 @@ export default function HomePage() {
             className="input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe tu duda del curso..."
+            placeholder="Escribe tu pregunta..."
           />
-          <button className="button" type="submit" disabled={loading}>
-            {loading ? "Pensando..." : "Enviar"}
+          <button className="button icon-button" type="submit" disabled={loading} aria-label="Enviar">
+            <svg
+              className="send-icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M21 3L10 14"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M21 3L14 21L10 14L3 10L21 3Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </form>
       </section>
