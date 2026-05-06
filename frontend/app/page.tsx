@@ -45,9 +45,17 @@ export default function HomePage() {
           displayName={AGENT_PANELS[1].label}
         />
 
-        <HuggingFacePanel className={AGENT_PANELS[2].cssClass} displayName={AGENT_PANELS[2].label} />
+        <HuggingFacePanel
+          selectedDocumentId={selectedDocumentId}
+          className={AGENT_PANELS[2].cssClass}
+          displayName={AGENT_PANELS[2].label}
+        />
 
-        <OllamaPanel className={AGENT_PANELS[3].cssClass} displayName={AGENT_PANELS[3].label} />
+        <OllamaPanel
+          selectedDocumentId={selectedDocumentId}
+          className={AGENT_PANELS[3].cssClass}
+          displayName={AGENT_PANELS[3].label}
+        />
       </section>
     </main>
   );
