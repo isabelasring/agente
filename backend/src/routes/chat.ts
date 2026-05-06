@@ -7,13 +7,14 @@ type ChatBody = {
   courseId: string;
   documentId?: string;
   lessonId?: string;
+  provider?: "gemini" | "groq";
 };
 
 const router = Router();
 
 router.post("/chat", async (req, res) => {
   try {
-    const { message, courseId, documentId, lessonId } = req.body as Partial<ChatBody>;
+    const { message, courseId, documentId, lessonId, provider } = req.body as Partial<ChatBody>;
     const selectedDocumentId = documentId || lessonId;
 
     if (!message || !courseId || !selectedDocumentId) {
@@ -24,13 +25,14 @@ router.post("/chat", async (req, res) => {
     }
 
     const courseContext = await loadCourseContext({ courseId, documentId: selectedDocumentId });
-    const answer = await askTutor({ message, courseContext });
+    const answer = await askTutor({ message, courseContext, provider });
 
     res.json({
       answer,
       meta: {
         courseId,
         documentId: selectedDocumentId,
+        provider: provider || "gemini",
         contextLoaded: Boolean(courseContext)
       }
     });

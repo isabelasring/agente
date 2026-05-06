@@ -36,6 +36,14 @@ export default function HomePage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [groqMessages, setGroqMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content: "Hola, soy tu agente Groq. Estoy lista para responder sobre el documento activo."
+    }
+  ]);
+  const [groqInput, setGroqInput] = useState("");
+  const [groqLoading, setGroqLoading] = useState(false);
   const [documentsLoading, setDocumentsLoading] = useState(true);
 
   useEffect(() => {
@@ -85,7 +93,8 @@ export default function HomePage() {
         body: JSON.stringify({
           message: trimmed,
           courseId: COURSE_ID,
-          documentId: selectedDocumentId
+          documentId: selectedDocumentId,
+          provider: "gemini"
         })
       });
 
@@ -107,6 +116,49 @@ export default function HomePage() {
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onSubmitGroq = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = groqInput.trim();
+    if (!trimmed || groqLoading || !selectedDocumentId) return;
+
+    const nextUserMessage: ChatMessage = { role: "user", content: trimmed };
+    setGroqMessages((prev) => [...prev, nextUserMessage]);
+    setGroqInput("");
+    setGroqLoading(true);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmed,
+          courseId: COURSE_ID,
+          documentId: selectedDocumentId,
+          provider: "groq"
+        })
+      });
+
+      const data = (await response.json()) as { answer?: string; error?: string };
+      setGroqMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.answer || data.error || "Ocurrio un error al procesar la respuesta."
+        }
+      ]);
+    } catch {
+      setGroqMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "No pude conectar con el backend. Verifica que este corriendo en localhost:3001."
+        }
+      ]);
+    } finally {
+      setGroqLoading(false);
     }
   };
 
@@ -202,7 +254,69 @@ export default function HomePage() {
         </form>
         </div>
 
-        {AGENT_CONFIGS.slice(1).map((agent) => (
+        <div className={`phone-shell ${AGENT_CONFIGS[1].className}`}>
+          <header className="chat-header">
+            <img className="bot-avatar" src="/agent-avatar.png" alt="Avatar del agente" />
+            <div>
+              <strong>
+                Tutor Virtual - <span className="agent-name">{AGENT_CONFIGS[1].name}</span>
+              </strong>
+              <p>En linea</p>
+            </div>
+          </header>
+
+          <div className="messages">
+            {groqMessages.map((message, index) => (
+              <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
+                {message.content}
+              </article>
+            ))}
+            {groqLoading && (
+              <article className="message assistant typing" aria-live="polite" aria-label="Groq escribiendo">
+                <span className="dot" />
+                <span className="dot" />
+                <span className="dot" />
+              </article>
+            )}
+          </div>
+
+          <form className="form" onSubmit={onSubmitGroq}>
+            <input
+              className="input"
+              value={groqInput}
+              onChange={(e) => setGroqInput(e.target.value)}
+              placeholder="Escribe tu pregunta..."
+            />
+            <button className="button icon-button" type="submit" disabled={groqLoading} aria-label="Enviar">
+              <svg
+                className="send-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M21 3L10 14"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M21 3L14 21L10 14L3 10L21 3Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        {AGENT_CONFIGS.slice(2).map((agent) => (
           <div key={agent.name} className={`phone-shell placeholder-shell ${agent.className}`}>
             <header className="chat-header">
               <img className="bot-avatar" src="/agent-avatar.png" alt="Avatar del agente" />
