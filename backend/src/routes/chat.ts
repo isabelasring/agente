@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { listCourseDocuments, loadCourseContext } from "../services/context.js";
-import { askTutor } from "../services/llm.js";
+import { askTutor, type LlmProvider } from "../services/llm.js";
 
 type ChatBody = {
   message: string;
   courseId: string;
   documentId?: string;
   lessonId?: string;
-  provider?: "gemini" | "groq";
+  provider?: LlmProvider;
 };
 
 const router = Router();
