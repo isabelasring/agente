@@ -41,6 +41,7 @@ export type SearchOptions = {
   excludePath?: string;
   maxDocs?: number;
   snippetChars?: number;
+  folderPrefix?: string;
 };
 
 /**
@@ -53,12 +54,12 @@ export type SearchOptions = {
  *   - Score = suma de apariciones; bonus si el token coincide con el filename.
  */
 export async function searchAcrossDocuments(options: SearchOptions): Promise<DocumentSnippet[]> {
-  const { query, excludePath, maxDocs = 3, snippetChars = 1200 } = options;
+  const { query, excludePath, maxDocs = 3, snippetChars = 1200, folderPrefix } = options;
   const tokens = tokenize(query);
   if (tokens.length === 0) return [];
 
   const root = getDocumentsRootPath();
-  const inventory = await listCourseDocuments("");
+  const inventory = await listCourseDocuments("", folderPrefix);
   const candidates = inventory.filter((item) => item.id !== excludePath);
 
   const scored: DocumentSnippet[] = [];

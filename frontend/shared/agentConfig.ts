@@ -3,6 +3,11 @@ export const AGENT_CHAT_URL =
 
 export const AGENT_DOCUMENTS_URL = AGENT_CHAT_URL.replace("/chat", "/documents");
 
+export const AGENT_FOLDERS_URL = AGENT_CHAT_URL.replace("/chat", "/folders");
+
+/** Valor del selector cuando el usuario quiere usar TODAS las carpetas. */
+export const ALL_FOLDERS_SENTINEL = "__all_folders__";
+
 /** Identificador enviado al API (meta) */
 export const COURSE_ID = process.env.NEXT_PUBLIC_COURSE_ID || "geotrends";
 

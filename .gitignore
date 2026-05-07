@@ -6,3 +6,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Documentos locales (cada equipo pone su propia copia)
+backend/data/

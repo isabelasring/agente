@@ -1,10 +1,17 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { AGENT_DOCUMENTS_URL, COURSE_ID, NO_DOCUMENT_SENTINEL } from "./agentConfig";
+import {
+  AGENT_DOCUMENTS_URL,
+  AGENT_FOLDERS_URL,
+  ALL_FOLDERS_SENTINEL,
+  COURSE_ID,
+  NO_DOCUMENT_SENTINEL
+} from "./agentConfig";
 import type { DocumentItem } from "./agentTypes";
 
 export function useCourseDocuments(
   _selectedDocumentId: string,
-  setSelectedDocumentId: Dispatch<SetStateAction<string>>
+  setSelectedDocumentId: Dispatch<SetStateAction<string>>,
+  selectedFolder: string = ALL_FOLDERS_SENTINEL
 ) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
@@ -15,7 +22,13 @@ export function useCourseDocuments(
     const loadDocuments = async () => {
       setDocumentsLoading(true);
       try {
-        const response = await fetch(`${AGENT_DOCUMENTS_URL}?courseId=${encodeURIComponent(COURSE_ID)}`);
+        const folderQuery =
+          selectedFolder && selectedFolder !== ALL_FOLDERS_SENTINEL
+            ? `&folder=${encodeURIComponent(selectedFolder)}`
+            : "";
+        const response = await fetch(
+          `${AGENT_DOCUMENTS_URL}?courseId=${encodeURIComponent(COURSE_ID)}${folderQuery}`
+        );
         const data = (await response.json()) as {
           documents?: DocumentItem[];
         };
@@ -43,7 +56,34 @@ export function useCourseDocuments(
     return () => {
       cancelled = true;
     };
-  }, [setSelectedDocumentId]);
+  }, [setSelectedDocumentId, selectedFolder]);
 
   return { documents, documentsLoading };
+}
+
+export function useTopLevelFolders() {
+  const [folders, setFolders] = useState<string[]>([]);
+  const [foldersLoading, setFoldersLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setFoldersLoading(true);
+      try {
+        const response = await fetch(AGENT_FOLDERS_URL);
+        const data = (await response.json()) as { folders?: string[] };
+        if (!cancelled) setFolders(data.folders || []);
+      } catch {
+        if (!cancelled) setFolders([]);
+      } finally {
+        if (!cancelled) setFoldersLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { folders, foldersLoading };
 }

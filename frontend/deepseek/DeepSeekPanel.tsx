@@ -1,19 +1,26 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { AGENT_CHAT_URL, backendUnavailableMessage, COURSE_ID } from "../shared/agentConfig";
+import {
+  AGENT_CHAT_URL,
+  ALL_FOLDERS_SENTINEL,
+  backendUnavailableMessage,
+  COURSE_ID
+} from "../shared/agentConfig";
 import type { ChatMessage } from "../shared/agentTypes";
 
 type Props = {
   className?: string;
   displayName?: string;
   selectedDocumentId: string;
+  selectedFolder?: string;
 };
 
 export default function DeepSeekPanel({
   className = "",
   displayName = "DeepSeek",
-  selectedDocumentId
+  selectedDocumentId,
+  selectedFolder = ALL_FOLDERS_SENTINEL
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -43,7 +50,8 @@ export default function DeepSeekPanel({
           message: trimmed,
           courseId: COURSE_ID,
           documentId: selectedDocumentId,
-          provider: "deepseek"
+          provider: "deepseek",
+          folder: selectedFolder === ALL_FOLDERS_SENTINEL ? "" : selectedFolder
         })
       });
 

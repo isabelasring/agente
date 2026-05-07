@@ -43,6 +43,54 @@ body {
   font-size: 14px;
 }
 
+.folder-picker {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e3e3e3;
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.folder-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.folder-picker-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f1f1f;
+  min-width: 140px;
+}
+
+.folder-select {
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid #d5d5d5;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #ffffff;
+  color: #1f1f1f;
+}
+
+.folder-select:disabled {
+  background: #f0f0f0;
+  color: #888888;
+  cursor: not-allowed;
+}
+
+.folder-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #555555;
+}
+
 .phone-shell {
   flex: 1 1 0;
   --agent-color: #a0a0a0;

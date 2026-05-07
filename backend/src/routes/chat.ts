@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { listCourseDocuments, loadCourseContext } from "../services/context.js";
+import {
+  listCourseDocuments,
+  listTopLevelFolders,
+  loadCourseContext
+} from "../services/context.js";
 import { searchAcrossDocuments } from "../services/search.js";
 import { askTutor, type LlmProvider } from "../services/llm.js";
 
@@ -9,13 +13,14 @@ type ChatBody = {
   documentId?: string;
   lessonId?: string;
   provider?: LlmProvider;
+  folder?: string;
 };
 
 const router = Router();
 
 router.post("/chat", async (req, res) => {
   try {
-    const { message, courseId, documentId, lessonId, provider } = req.body as Partial<ChatBody>;
+    const { message, courseId, documentId, lessonId, provider, folder } = req.body as Partial<ChatBody>;
     const selectedDocumentId = documentId || lessonId;
 
     if (!message || !courseId || !selectedDocumentId) {
@@ -25,10 +30,17 @@ router.post("/chat", async (req, res) => {
       return;
     }
 
+    const folderPrefix = folder?.trim() || undefined;
+
     const [courseContext, inventoryItems, additionalSnippets] = await Promise.all([
       loadCourseContext({ courseId, documentId: selectedDocumentId }),
-      listCourseDocuments(courseId),
-      searchAcrossDocuments({ query: message, excludePath: selectedDocumentId, maxDocs: 3 })
+      listCourseDocuments(courseId, folderPrefix),
+      searchAcrossDocuments({
+        query: message,
+        excludePath: selectedDocumentId,
+        maxDocs: 3,
+        folderPrefix
+      })
     ]);
 
     const documentsInventory = inventoryItems.map((item) => item.id);
@@ -47,6 +59,7 @@ router.post("/chat", async (req, res) => {
         courseId,
         documentId: selectedDocumentId,
         provider: provider || "gemini",
+        folder: folderPrefix || null,
         contextLoaded: Boolean(courseContext),
         inventorySize: documentsInventory.length,
         searchHits: additionalSnippets.map((s) => ({ path: s.path, score: s.score }))
@@ -68,11 +81,20 @@ router.get("/documents", async (req, res) => {
     return;
   }
 
-  const documents = await listCourseDocuments(courseId);
+  const rawFolder = typeof req.query.folder === "string" ? req.query.folder : "";
+  const folder = rawFolder.trim() || undefined;
+
+  const documents = await listCourseDocuments(courseId, folder);
   res.json({
     courseId,
+    folder: folder || null,
     documents
   });
+});
+
+router.get("/folders", async (_req, res) => {
+  const folders = await listTopLevelFolders();
+  res.json({ folders });
 });
 
 export default router;

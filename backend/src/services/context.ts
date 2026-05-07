@@ -41,14 +41,47 @@ export async function loadCourseContext({
   return "";
 }
 
-export async function listCourseDocuments(_courseId: string): Promise<DocumentItem[]> {
+export async function listCourseDocuments(
+  _courseId: string,
+  folderPrefix?: string
+): Promise<DocumentItem[]> {
   const root = getDocumentsRootPath();
   try {
     const flat = await collectDocumentsRecursive(root, "");
-    return flat.sort((a, b) => a.name.localeCompare(b.name));
+    const filtered = filterByFolder(flat, folderPrefix);
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
+}
+
+/**
+ * Devuelve las carpetas top-level dentro de la raiz indexada.
+ * Sirve para mostrar el desplegable de seleccion de carpeta en la UI.
+ */
+export async function listTopLevelFolders(): Promise<string[]> {
+  const root = getDocumentsRootPath();
+  try {
+    const entries = await fs.readdir(root, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+function normalizeFolderPrefix(folderPrefix: string | undefined): string {
+  if (!folderPrefix) return "";
+  return folderPrefix.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+}
+
+function filterByFolder<T extends { id: string }>(items: T[], folderPrefix?: string): T[] {
+  const prefix = normalizeFolderPrefix(folderPrefix);
+  if (!prefix) return items;
+  const matcher = `${prefix}/`;
+  return items.filter((item) => item.id === prefix || item.id.startsWith(matcher));
 }
 
 export type DocumentItem = {
