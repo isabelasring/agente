@@ -1,45 +1,34 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { AGENT_CHAT_URL, backendUnavailableMessage, COURSE_ID } from "../shared/agentConfig";
-import type { ChatMessage, DocumentItem } from "../shared/agentTypes";
+import type { ChatMessage } from "../shared/agentTypes";
 
 type Props = {
   className?: string;
   displayName?: string;
-  documents: DocumentItem[];
-  documentsLoading: boolean;
   selectedDocumentId: string;
-  onSelectedDocumentChange: (id: string) => void;
 };
 
 export default function GeminiPanel({
   className = "",
   displayName = "Gemini",
-  documents,
-  documentsLoading,
-  selectedDocumentId,
-  onSelectedDocumentChange
+  selectedDocumentId
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
       content:
-        "Hola, soy tu agente del curso. Puedes saludarme y tambien escoger un documento para que conversemos sobre su contenido."
+        "Hola, soy tu agente del curso. Estoy lista para resolver dudas con base en el contenido configurado para esta sesión."
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const selectedDocumentName = useMemo(() => {
-    const selected = documents.find((item) => item.id === selectedDocumentId);
-    return selected?.name || selectedDocumentId;
-  }, [documents, selectedDocumentId]);
-
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed || loading || !selectedDocumentId) return;
+    if (!trimmed || loading) return;
 
     const nextUserMessage: ChatMessage = { role: "user", content: trimmed };
     setMessages((prev) => [...prev, nextUserMessage]);
@@ -90,28 +79,6 @@ export default function GeminiPanel({
           <p>En linea</p>
         </div>
       </header>
-
-      <section className="document-picker">
-        <label htmlFor="gemini-document-select">Documento activo</label>
-        <select
-          id="gemini-document-select"
-          className="select"
-          value={selectedDocumentId}
-          onChange={(event) => onSelectedDocumentChange(event.target.value)}
-          disabled={loading || documentsLoading || documents.length === 0}
-        >
-          {documents.map((doc) => (
-            <option key={doc.name} value={doc.id}>
-              {doc.name}
-            </option>
-          ))}
-        </select>
-        <p className="document-hint">
-          {documentsLoading
-            ? "Cargando documentos..."
-            : `Conversando sobre: ${selectedDocumentName}`}
-        </p>
-      </section>
 
       <div className="messages">
         {messages.map((message, index) => (

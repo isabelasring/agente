@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
-import { AGENT_DOCUMENTS_URL, COURSE_ID } from "./agentConfig";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { AGENT_DOCUMENTS_URL, COURSE_ID, NO_DOCUMENT_SENTINEL } from "./agentConfig";
 import type { DocumentItem } from "./agentTypes";
 
-export function useCourseDocuments(selectedDocumentId: string, setSelectedDocumentId: (id: string) => void) {
+export function useCourseDocuments(
+  _selectedDocumentId: string,
+  setSelectedDocumentId: Dispatch<SetStateAction<string>>
+) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadDocuments = async () => {
       setDocumentsLoading(true);
       try {
@@ -14,22 +19,31 @@ export function useCourseDocuments(selectedDocumentId: string, setSelectedDocume
         const data = (await response.json()) as {
           documents?: DocumentItem[];
         };
+        if (cancelled) return;
         const availableDocs = data.documents || [];
         setDocuments(availableDocs);
 
-        const currentExists = availableDocs.some((doc) => doc.id === selectedDocumentId);
-        if (!currentExists && availableDocs[0]) {
-          setSelectedDocumentId(availableDocs[0].id);
-        }
+        setSelectedDocumentId((prev) => {
+          const exists = availableDocs.some((doc) => doc.id === prev);
+          if (exists) return prev;
+          if (availableDocs[0]) return availableDocs[0].id;
+          return NO_DOCUMENT_SENTINEL;
+        });
       } catch {
-        setDocuments([]);
+        if (!cancelled) {
+          setDocuments([]);
+          setSelectedDocumentId(NO_DOCUMENT_SENTINEL);
+        }
       } finally {
-        setDocumentsLoading(false);
+        if (!cancelled) setDocumentsLoading(false);
       }
     };
 
-    loadDocuments();
-  }, [selectedDocumentId, setSelectedDocumentId]);
+    void loadDocuments();
+    return () => {
+      cancelled = true;
+    };
+  }, [setSelectedDocumentId]);
 
   return { documents, documentsLoading };
 }

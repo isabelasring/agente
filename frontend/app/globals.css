@@ -132,39 +132,6 @@ body {
   padding-right: 2px;
 }
 
-.document-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 12px 2px 4px;
-}
-
-.document-picker label {
-  font-size: 12px;
-  color: #5f5f5f;
-}
-
-.select {
-  border: 1px solid #d8d8d8;
-  background: #ffffff;
-  color: #2a2a2a;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 14px;
-}
-
-.select:focus {
-  outline: none;
-  border-color: #888888;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
-}
-
-.document-hint {
-  margin: 0;
-  font-size: 12px;
-  color: #666666;
-}
-
 .message {
   border-radius: 16px;
   padding: 11px 13px;

@@ -18,7 +18,8 @@ export default function GroqPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hola, soy tu agente Groq. Estoy lista para responder sobre el documento activo."
+      content:
+        "Hola, soy tu agente Groq. Estoy lista para responder sobre el mismo documento activo que el resto de tutores."
     }
   ]);
   const [input, setInput] = useState("");
@@ -27,7 +28,7 @@ export default function GroqPanel({
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed || loading || !selectedDocumentId) return;
+    if (!trimmed || loading) return;
 
     const nextUserMessage: ChatMessage = { role: "user", content: trimmed };
     setMessages((prev) => [...prev, nextUserMessage]);

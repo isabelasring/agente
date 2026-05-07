@@ -13,7 +13,7 @@ type AskTutorInput = {
 
 export async function askTutor({ message, courseContext, provider = "gemini" }: AskTutorInput): Promise<string> {
   if (!courseContext.trim()) {
-    return "No encuentro esa informacion en el contenido del curso.";
+    return "No hay contenido de carpeta cargado: no se encontro el documento elegido o la carpeta GEOTRENDS_DOCUMENTS_ROOT no tiene archivos .pdf, .txt, .md o .docx (los .xlsx no se leen aun). Revisa backend/.env y la carpeta de Proyectos.";
   }
 
   switch (provider) {

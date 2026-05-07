@@ -17,17 +17,9 @@ const AGENT_PANELS = [
 
 export default function HomePage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState(DEFAULT_DOCUMENT_ID);
-  const { documents, documentsLoading } = useCourseDocuments(selectedDocumentId, setSelectedDocumentId);
+  useCourseDocuments(selectedDocumentId, setSelectedDocumentId);
 
-  const memoGeminiProps = useMemo(
-    () => ({
-      documents,
-      documentsLoading,
-      selectedDocumentId,
-      onSelectedDocumentChange: setSelectedDocumentId
-    }),
-    [documents, documentsLoading, selectedDocumentId]
-  );
+  const memoGeminiProps = useMemo(() => ({ selectedDocumentId }), [selectedDocumentId]);
 
   return (
     <main className="container">

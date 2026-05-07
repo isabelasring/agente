@@ -3,9 +3,20 @@ export const AGENT_CHAT_URL =
 
 export const AGENT_DOCUMENTS_URL = AGENT_CHAT_URL.replace("/chat", "/documents");
 
-export const COURSE_ID = process.env.NEXT_PUBLIC_COURSE_ID || "geo-basico";
+/** Identificador enviado al API (meta) */
+export const COURSE_ID = process.env.NEXT_PUBLIC_COURSE_ID || "geotrends";
 
-export const DEFAULT_DOCUMENT_ID = process.env.NEXT_PUBLIC_LESSON_ID || "leccion-1";
+/** Sin archivos indexables en la carpeta; el backend carga contexto vacio pero deja conversar el modelo */
+export const NO_DOCUMENT_SENTINEL = "__geotrends_no_doc__";
+
+/**
+ * Documento inicial: ruta relativa (con extension) dentro de GEOTRENDS_DOCUMENTS_ROOT.
+ * Vacio: usa el sentinel hasta que llegue la lista desde el servidor.
+ */
+const lessonFromEnv = (process.env.NEXT_PUBLIC_LESSON_ID ?? "").trim();
+
+export const DEFAULT_DOCUMENT_ID =
+  lessonFromEnv.length > 0 ? lessonFromEnv : NO_DOCUMENT_SENTINEL;
 
 export function backendUnavailableMessage(): string {
   try {

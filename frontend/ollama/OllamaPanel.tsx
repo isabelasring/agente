@@ -19,7 +19,7 @@ export default function OllamaPanel({
     {
       role: "assistant",
       content:
-        "Hola, soy tu agente Ollama. Uso el documento activo que eliges en el panel de Gemini (mismo curso que los demas)."
+        "Hola, soy tu agente Ollama. Uso el mismo documento activo que el resto de tutores en esta sesión."
     }
   ]);
   const [input, setInput] = useState("");
@@ -28,7 +28,7 @@ export default function OllamaPanel({
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed || loading || !selectedDocumentId) return;
+    if (!trimmed || loading) return;
 
     const nextUserMessage: ChatMessage = { role: "user", content: trimmed };
     setMessages((prev) => [...prev, nextUserMessage]);
