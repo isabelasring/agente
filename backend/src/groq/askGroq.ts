@@ -1,7 +1,13 @@
 import { buildSystemPrompt } from "../prompts/tutorPrompt.js";
 import { AskProviderInput, getErrorMessage } from "../shared/llmTypes.js";
 
-export async function askGroq({ message, courseContext }: AskProviderInput): Promise<string> {
+export async function askGroq({
+  message,
+  courseContext,
+  documentsInventory,
+  activeDocumentPath,
+  additionalSnippets
+}: AskProviderInput): Promise<string> {
   const groqApiKey = process.env.GROQ_API_KEY;
   if (!groqApiKey) {
     return "Falta configurar GROQ_API_KEY en el backend.";
@@ -13,7 +19,7 @@ export async function askGroq({ message, courseContext }: AskProviderInput): Pro
     messages: [
       {
         role: "system",
-        content: buildSystemPrompt(courseContext)
+        content: buildSystemPrompt({ documentContext: courseContext, documentsInventory, activeDocumentPath, additionalSnippets })
       },
       {
         role: "user",
@@ -48,7 +54,7 @@ export async function askGroq({ message, courseContext }: AskProviderInput): Pro
       choices?: Array<{ message?: { content?: string } }>;
     };
     const answer = data.choices?.[0]?.message?.content?.trim() || "";
-    return answer || "No encuentro esa informacion en el contenido del curso.";
+    return answer || "No encuentro esa informacion en el documento.";
   } catch (error) {
     return `Groq devolvio un error: ${getErrorMessage(error)}`;
   }

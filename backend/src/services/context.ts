@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import mammoth from "mammoth";
+import * as XLSX from "xlsx";
 
-/** Debe coincidir con `NO_DOCUMENT_SENTINEL` en el frontend cuando no hay .pdf/.md/.txt/.docx indexables */
+/** Debe coincidir con `NO_DOCUMENT_SENTINEL` en el frontend cuando no hay archivos indexables (.pdf/.md/.txt/.docx/.xlsx) */
 const NO_INDEXED_DOCUMENT_SENTINEL = "__geotrends_no_doc__";
 
 type ContextInput = {
@@ -56,18 +57,18 @@ export type DocumentItem = {
   extension: SupportedExtension;
 };
 
-type SupportedExtension = ".md" | ".txt" | ".docx" | ".pdf";
+type SupportedExtension = ".md" | ".txt" | ".docx" | ".pdf" | ".xlsx";
 
-const SUPPORTED_EXTENSIONS: SupportedExtension[] = [".md", ".txt", ".docx", ".pdf"];
+const SUPPORTED_EXTENSIONS: SupportedExtension[] = [".md", ".txt", ".docx", ".pdf", ".xlsx"];
 
 const IGNORED_FILE_NAMES = new Set(["desktop.ini", "thumbs.db", ".ds_store"]);
 
 /**
- * Carpeta local que se indexa entera (recursivo): md, txt, docx, pdf.
+ * Carpeta local que se indexa entera (recursivo): md, txt, docx, pdf, xlsx.
  * GEOTRENDS_DOCUMENTS_ROOT: ruta relativa al cwd del backend (ej. data/cursos/geo-basico/geotrends)
  * o ruta absoluta en Windows/Linux.
  */
-function getDocumentsRootPath(): string {
+export function getDocumentsRootPath(): string {
   const raw = process.env.GEOTRENDS_DOCUMENTS_ROOT?.trim();
   if (raw) {
     const cleaned = raw.replace(/^["']|["']$/g, "");
@@ -128,7 +129,7 @@ function fileToDocumentItem(relativePathPosix: string): DocumentItem | null {
 }
 
 /** Evita salir de `root` (path traversal). `relativePosix` usa barras `/`. */
-function safeResolveUnderRoot(root: string, relativePosix: string): string | null {
+export function safeResolveUnderRoot(root: string, relativePosix: string): string | null {
   const trimmed = relativePosix.trim().replace(/\\/g, "/");
   if (!trimmed || trimmed.includes("\0")) return null;
 
@@ -145,29 +146,54 @@ function safeResolveUnderRoot(root: string, relativePosix: string): string | nul
   return candidate;
 }
 
-async function readDocumentContent(filePath: string): Promise<string> {
+function readXlsxPlainText(buffer: Buffer): string {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, sheetStubs: true });
+  const parts: string[] = [];
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+    const trimmed = csv.trim();
+    if (trimmed) {
+      parts.push(`--- Hoja: ${sheetName} ---\n${trimmed}`);
+    }
+  }
+  return parts.join("\n\n");
+}
+
+type CachedDoc = { mtimeMs: number; content: string };
+const documentContentCache = new Map<string, CachedDoc>();
+
+export async function readDocumentContent(filePath: string): Promise<string> {
   try {
+    const stat = await fs.stat(filePath);
+    const cached = documentContentCache.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.content;
+    }
+
     const extension = path.extname(filePath).toLowerCase() as SupportedExtension;
+    let content = "";
 
     if (extension === ".md" || extension === ".txt") {
-      return await fs.readFile(filePath, "utf8");
-    }
-
-    if (extension === ".docx") {
+      content = await fs.readFile(filePath, "utf8");
+    } else if (extension === ".docx") {
       const result = await mammoth.extractRawText({ path: filePath });
-      return result.value.trim();
-    }
-
-    if (extension === ".pdf") {
+      content = result.value.trim();
+    } else if (extension === ".pdf") {
       const fileBuffer = await fs.readFile(filePath);
       const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({ data: fileBuffer });
       const result = await parser.getText();
       await parser.destroy();
-      return result.text.trim();
+      content = result.text.trim();
+    } else if (extension === ".xlsx") {
+      const fileBuffer = await fs.readFile(filePath);
+      content = readXlsxPlainText(fileBuffer).trim();
     }
 
-    return "";
+    documentContentCache.set(filePath, { mtimeMs: stat.mtimeMs, content });
+    return content;
   } catch {
     return "";
   }

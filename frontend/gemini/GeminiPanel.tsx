@@ -19,7 +19,7 @@ export default function GeminiPanel({
     {
       role: "assistant",
       content:
-        "Hola, soy tu agente del curso. Estoy lista para resolver dudas con base en el contenido configurado para esta sesión."
+        "Hola, soy tu agente. Analizo el documento activo y respondo tus preguntas con base en su contenido."
     }
   ]);
   const [input, setInput] = useState("");
@@ -74,7 +74,7 @@ export default function GeminiPanel({
         <img className="bot-avatar" src="/agent-avatar.png" alt="Avatar del agente" />
         <div>
           <strong>
-            Tutor Virtual - <span className="agent-name">{displayName}</span>
+            Agente - <span className="agent-name">{displayName}</span>
           </strong>
           <p>En linea</p>
         </div>

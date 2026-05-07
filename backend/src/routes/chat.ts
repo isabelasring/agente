@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { listCourseDocuments, loadCourseContext } from "../services/context.js";
+import { searchAcrossDocuments } from "../services/search.js";
 import { askTutor, type LlmProvider } from "../services/llm.js";
 
 type ChatBody = {
@@ -24,8 +25,21 @@ router.post("/chat", async (req, res) => {
       return;
     }
 
-    const courseContext = await loadCourseContext({ courseId, documentId: selectedDocumentId });
-    const answer = await askTutor({ message, courseContext, provider });
+    const [courseContext, inventoryItems, additionalSnippets] = await Promise.all([
+      loadCourseContext({ courseId, documentId: selectedDocumentId }),
+      listCourseDocuments(courseId),
+      searchAcrossDocuments({ query: message, excludePath: selectedDocumentId, maxDocs: 3 })
+    ]);
+
+    const documentsInventory = inventoryItems.map((item) => item.id);
+    const answer = await askTutor({
+      message,
+      courseContext,
+      documentsInventory,
+      activeDocumentPath: selectedDocumentId,
+      additionalSnippets,
+      provider
+    });
 
     res.json({
       answer,
@@ -33,7 +47,9 @@ router.post("/chat", async (req, res) => {
         courseId,
         documentId: selectedDocumentId,
         provider: provider || "gemini",
-        contextLoaded: Boolean(courseContext)
+        contextLoaded: Boolean(courseContext),
+        inventorySize: documentsInventory.length,
+        searchHits: additionalSnippets.map((s) => ({ path: s.path, score: s.score }))
       }
     });
   } catch {

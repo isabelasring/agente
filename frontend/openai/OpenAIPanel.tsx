@@ -19,7 +19,7 @@ export default function OpenAIPanel({
     {
       role: "assistant",
       content:
-        "Hola, soy tu agente OpenAI. Uso el mismo documento activo que el resto de tutores en esta sesión."
+        "Hola, soy tu agente OpenAI. Analizo el documento activo y respondo con base en su contenido."
     }
   ]);
   const [input, setInput] = useState("");
@@ -74,7 +74,7 @@ export default function OpenAIPanel({
         <img className="bot-avatar" src="/agent-avatar.png" alt="Avatar del agente" />
         <div>
           <strong>
-            Tutor Virtual - <span className="agent-name">{displayName}</span>
+            Agente - <span className="agent-name">{displayName}</span>
           </strong>
           <p>En linea</p>
         </div>

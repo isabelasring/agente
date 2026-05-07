@@ -19,7 +19,13 @@ function resolveRouterModel(envValue: string | undefined): string {
   return `${raw}:fastest`;
 }
 
-export async function askHuggingFace({ message, courseContext }: AskProviderInput): Promise<string> {
+export async function askHuggingFace({
+  message,
+  courseContext,
+  documentsInventory,
+  activeDocumentPath,
+  additionalSnippets
+}: AskProviderInput): Promise<string> {
   const apiKey = process.env.HUGGINGFACE_API_KEY?.trim();
   if (!apiKey) {
     return "Falta configurar HUGGINGFACE_API_KEY en el backend.";
@@ -27,7 +33,12 @@ export async function askHuggingFace({ message, courseContext }: AskProviderInpu
 
   const model = resolveRouterModel(process.env.HUGGINGFACE_MODEL);
 
-  const systemContent = buildSystemPrompt(courseContext);
+  const systemContent = buildSystemPrompt({
+    documentContext: courseContext,
+    documentsInventory,
+    activeDocumentPath,
+    additionalSnippets
+  });
 
   try {
     const response = await fetch(HF_CHAT_COMPLETIONS_URL, {
@@ -88,7 +99,7 @@ export async function askHuggingFace({ message, courseContext }: AskProviderInpu
     }
 
     const answer = extractChatContent(data);
-    return answer || "No encuentro esa informacion en el contenido del curso.";
+    return answer || "No encuentro esa informacion en el documento.";
   } catch (error) {
     return `Hugging Face devolvio un error: ${getErrorMessage(error)}`;
   }

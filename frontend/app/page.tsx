@@ -6,6 +6,7 @@ import GroqPanel from "../groq/GroqPanel";
 import HuggingFacePanel from "../huggingface/HuggingFacePanel";
 import OllamaPanel from "../ollama/OllamaPanel";
 import OpenAIPanel from "../openai/OpenAIPanel";
+import DeepSeekPanel from "../deepseek/DeepSeekPanel";
 import { DEFAULT_DOCUMENT_ID } from "../shared/agentConfig";
 import { useCourseDocuments } from "../shared/useCourseDocuments";
 
@@ -14,7 +15,8 @@ const AGENT_PANELS = [
   { label: "Groq", cssClass: "agent-groq" },
   { label: "Hugging Face", cssClass: "agent-huggingface" },
   { label: "Ollama", cssClass: "agent-ollama" },
-  { label: "OpenAI", cssClass: "agent-openai" }
+  { label: "OpenAI", cssClass: "agent-openai" },
+  { label: "DeepSeek", cssClass: "agent-deepseek" }
 ] as const;
 
 export default function HomePage() {
@@ -25,7 +27,7 @@ export default function HomePage() {
     <main className="container">
       <section className="hero">
         <h1>Geobot</h1>
-        <p>Soy tu agente de apoyo para resolver dudas del curso de forma clara y rapida.</p>
+        <p>Soy tu agente. Analizo el documento que selecciones y respondo tus preguntas con base en su contenido.</p>
       </section>
 
       <section className="agents-grid">
@@ -57,6 +59,12 @@ export default function HomePage() {
           selectedDocumentId={selectedDocumentId}
           className={AGENT_PANELS[4].cssClass}
           displayName={AGENT_PANELS[4].label}
+        />
+
+        <DeepSeekPanel
+          selectedDocumentId={selectedDocumentId}
+          className={AGENT_PANELS[5].cssClass}
+          displayName={AGENT_PANELS[5].label}
         />
       </section>
     </main>

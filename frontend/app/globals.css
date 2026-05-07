@@ -83,6 +83,10 @@ body {
   --agent-color: #10a37f;
 }
 
+.agent-deepseek {
+  --agent-color: #4d6bfe;
+}
+
 .placeholder-content {
   margin-top: 14px;
   border: 1px dashed #d6d6d6;

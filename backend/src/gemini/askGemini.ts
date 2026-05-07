@@ -9,7 +9,13 @@ function normalizeGeminiModel(value: string): string {
   return value.replace(/^models\//, "");
 }
 
-export async function askGemini({ message, courseContext }: AskProviderInput): Promise<string> {
+export async function askGemini({
+  message,
+  courseContext,
+  documentsInventory,
+  activeDocumentPath,
+  additionalSnippets
+}: AskProviderInput): Promise<string> {
   if (!geminiClient) {
     return "Falta configurar GEMINI_API_KEY en el backend.";
   }
@@ -19,7 +25,7 @@ export async function askGemini({ message, courseContext }: AskProviderInput): P
   const model = geminiClient.getGenerativeModel({ model: modelName });
 
   const prompt = [
-    buildSystemPrompt(courseContext),
+    buildSystemPrompt({ documentContext: courseContext, documentsInventory, activeDocumentPath, additionalSnippets }),
     "",
     "PREGUNTA DEL USUARIO:",
     message
@@ -28,7 +34,7 @@ export async function askGemini({ message, courseContext }: AskProviderInput): P
   try {
     const result = await model.generateContent(prompt);
     const answer = result.response.text().trim();
-    return answer || "No encuentro esa informacion en el contenido del curso.";
+    return answer || "No encuentro esa informacion en el documento.";
   } catch (error) {
     const rawMessage = getErrorMessage(error);
     console.error("[Gemini] Error al generar contenido:", rawMessage);

@@ -5,7 +5,13 @@ function ollamaBaseUrl(): string {
   return (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
 }
 
-export async function askOllama({ message, courseContext }: AskProviderInput): Promise<string> {
+export async function askOllama({
+  message,
+  courseContext,
+  documentsInventory,
+  activeDocumentPath,
+  additionalSnippets
+}: AskProviderInput): Promise<string> {
   const model = process.env.OLLAMA_MODEL?.trim() || "llama3.2";
   const url = `${ollamaBaseUrl()}/api/chat`;
 
@@ -13,7 +19,10 @@ export async function askOllama({ message, courseContext }: AskProviderInput): P
     model,
     stream: false,
     messages: [
-      { role: "system", content: buildSystemPrompt(courseContext) },
+      {
+        role: "system",
+        content: buildSystemPrompt({ documentContext: courseContext, documentsInventory, activeDocumentPath, additionalSnippets })
+      },
       { role: "user", content: message }
     ],
     options: {
@@ -51,7 +60,7 @@ export async function askOllama({ message, courseContext }: AskProviderInput): P
 
     const content = (data as { message?: { content?: string } }).message?.content;
     const answer = typeof content === "string" ? content.trim() : "";
-    return answer || "No encuentro esa informacion en el contenido del curso.";
+    return answer || "No encuentro esa informacion en el documento.";
   } catch (error) {
     const msg = getErrorMessage(error);
     if (/fetch failed|ECONNREFUSED|ENOTFOUND|network/i.test(msg)) {

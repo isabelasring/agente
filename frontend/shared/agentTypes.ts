@@ -6,5 +6,5 @@ export type ChatMessage = {
 export type DocumentItem = {
   id: string;
   name: string;
-  extension: ".md" | ".txt" | ".docx" | ".pdf";
+  extension: ".md" | ".txt" | ".docx" | ".pdf" | ".xlsx";
 };

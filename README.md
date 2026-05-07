@@ -12,7 +12,7 @@ Este proyecto crea un agente local enfocado en dudas del curso, preparado para i
 
 - `frontend/`: interfaz de chat
 - `backend/`: API del agente
-- Documentos: carpeta configurable con `GEOTRENDS_DOCUMENTS_ROOT` en `backend/.env` (por defecto `data/geotrends`). Se indexa **toda** la carpeta en profundidad (txt, md, docx, pdf); `GET /documents` devuelve rutas relativas tipo `subcarpeta/archivo.txt`.
+- Documentos: carpeta configurable con `GEOTRENDS_DOCUMENTS_ROOT` en `backend/.env` (por defecto `data/geotrends`). Se indexa **toda** la carpeta en profundidad (txt, md, docx, pdf, xlsx); `GET /documents` devuelve rutas relativas tipo `subcarpeta/archivo.txt`.
 
 ## Ejecutar
 

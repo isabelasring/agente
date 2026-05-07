@@ -10,16 +10,16 @@ type Props = {
   selectedDocumentId: string;
 };
 
-export default function HuggingFacePanel({
+export default function DeepSeekPanel({
   className = "",
-  displayName = "Hugging Face",
+  displayName = "DeepSeek",
   selectedDocumentId
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
       content:
-        "Hola, soy tu agente Hugging Face. Analizo el documento activo y respondo con base en su contenido."
+        "Hola, soy tu agente DeepSeek. Analizo el documento activo y respondo con base en su contenido."
     }
   ]);
   const [input, setInput] = useState("");
@@ -43,7 +43,7 @@ export default function HuggingFacePanel({
           message: trimmed,
           courseId: COURSE_ID,
           documentId: selectedDocumentId,
-          provider: "huggingface"
+          provider: "deepseek"
         })
       });
 
@@ -87,11 +87,7 @@ export default function HuggingFacePanel({
           </article>
         ))}
         {loading && (
-          <article
-            className="message assistant typing"
-            aria-live="polite"
-            aria-label="Hugging Face escribiendo"
-          >
+          <article className="message assistant typing" aria-live="polite" aria-label="DeepSeek escribiendo">
             <span className="dot" />
             <span className="dot" />
             <span className="dot" />
