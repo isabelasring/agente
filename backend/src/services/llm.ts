@@ -2,8 +2,9 @@ import { askGemini } from "../gemini/askGemini.js";
 import { askGroq } from "../groq/askGroq.js";
 import { askHuggingFace } from "../huggingface/askHuggingFace.js";
 import { askOllama } from "../ollama/askOllama.js";
+import { askOpenAI } from "../openai/askOpenAI.js";
 
-export type LlmProvider = "gemini" | "groq" | "huggingface" | "ollama";
+export type LlmProvider = "gemini" | "groq" | "huggingface" | "ollama" | "openai";
 
 type AskTutorInput = {
   message: string;
@@ -23,6 +24,8 @@ export async function askTutor({ message, courseContext, provider = "gemini" }: 
       return askHuggingFace({ message, courseContext });
     case "ollama":
       return askOllama({ message, courseContext });
+    case "openai":
+      return askOpenAI({ message, courseContext });
     default:
       return askGemini({ message, courseContext });
   }
