@@ -5,7 +5,8 @@ import {
   AGENT_CHAT_URL,
   ALL_FOLDERS_SENTINEL,
   backendUnavailableMessage,
-  COURSE_ID
+  COURSE_ID,
+  NO_DOCUMENT_SENTINEL
 } from "../shared/agentConfig";
 import type { ChatMessage } from "../shared/agentTypes";
 
@@ -31,11 +32,18 @@ export default function GeminiPanel({
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lastLatencyMs, setLastLatencyMs] = useState<number | null>(null);
+
+  const activeDocumentLabel =
+    selectedDocumentId === NO_DOCUMENT_SENTINEL
+      ? "Sin documento activo"
+      : (selectedDocumentId.split("/").pop() || selectedDocumentId);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || loading) return;
+    const startedAt = performance.now();
 
     const nextUserMessage: ChatMessage = { role: "user", content: trimmed };
     setMessages((prev) => [...prev, nextUserMessage]);
@@ -73,6 +81,7 @@ export default function GeminiPanel({
       ]);
     } finally {
       setLoading(false);
+      setLastLatencyMs(Math.round(performance.now() - startedAt));
     }
   };
 
@@ -87,6 +96,11 @@ export default function GeminiPanel({
           <p>En linea</p>
         </div>
       </header>
+
+      <p className="doc-ready-badge">Documento activo listo: <strong>{activeDocumentLabel}</strong></p>
+      <p className="latency-hint">
+        Tiempo ultima respuesta: <strong>{formatLatency(lastLatencyMs)}</strong>
+      </p>
 
       <div className="messages">
         {messages.map((message, index) => (
@@ -139,4 +153,14 @@ export default function GeminiPanel({
       </form>
     </div>
   );
+}
+
+
+function formatLatency(ms: number | null): string {
+  if (ms === null) return '--';
+  if (ms < 1000) return String(ms) + " ms";
+  const seconds = ms / 1000;
+  if (seconds < 60) return seconds.toFixed(2) + " s";
+  const minutes = seconds / 60;
+  return minutes.toFixed(2) + " min";
 }

@@ -7,7 +7,11 @@ import HuggingFacePanel from "../huggingface/HuggingFacePanel";
 import OllamaPanel from "../ollama/OllamaPanel";
 import OpenAIPanel from "../openai/OpenAIPanel";
 import DeepSeekPanel from "../deepseek/DeepSeekPanel";
-import { ALL_FOLDERS_SENTINEL, DEFAULT_DOCUMENT_ID } from "../shared/agentConfig";
+import {
+  AGENT_DOCUMENT_FILE_URL,
+  ALL_FOLDERS_SENTINEL,
+  DEFAULT_DOCUMENT_ID
+} from "../shared/agentConfig";
 import { useCourseDocuments, useTopLevelFolders } from "../shared/useCourseDocuments";
 
 const AGENT_PANELS = [
@@ -31,6 +35,8 @@ export default function HomePage() {
 
   const folderLabel =
     selectedFolder === ALL_FOLDERS_SENTINEL ? "Todas las carpetas" : selectedFolder;
+  const showPdfPreview = selectedDocumentId.toLowerCase().endsWith(".pdf");
+  const previewUrl = `${AGENT_DOCUMENT_FILE_URL}?path=${encodeURIComponent(selectedDocumentId)}#zoom=page-width`;
 
   return (
     <main className="container">
@@ -88,11 +94,25 @@ export default function HomePage() {
           <p className="folder-hint">
             Carpeta: <strong>{folderLabel}</strong> · {documents.length} documento(s) indexado(s).
           </p>
+
+          {showPdfPreview && (
+            <div className="pdf-preview">
+              <p className="pdf-preview-title">Vista previa PDF</p>
+              <div className="pdf-preview-resizable">
+                <iframe
+                  title="Vista previa del PDF activo"
+                  src={previewUrl}
+                  className="pdf-preview-frame"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="agents-grid">
         <GeminiPanel
+          key={`gemini-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[0].cssClass}
@@ -100,6 +120,7 @@ export default function HomePage() {
         />
 
         <GroqPanel
+          key={`groq-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[1].cssClass}
@@ -107,6 +128,7 @@ export default function HomePage() {
         />
 
         <HuggingFacePanel
+          key={`huggingface-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[2].cssClass}
@@ -114,6 +136,7 @@ export default function HomePage() {
         />
 
         <OllamaPanel
+          key={`ollama-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[3].cssClass}
@@ -121,6 +144,7 @@ export default function HomePage() {
         />
 
         <OpenAIPanel
+          key={`openai-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[4].cssClass}
@@ -128,6 +152,7 @@ export default function HomePage() {
         />
 
         <DeepSeekPanel
+          key={`deepseek-${selectedFolder}-${selectedDocumentId}`}
           selectedDocumentId={selectedDocumentId}
           selectedFolder={selectedFolder}
           className={AGENT_PANELS[5].cssClass}

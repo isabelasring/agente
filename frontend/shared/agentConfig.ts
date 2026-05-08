@@ -4,6 +4,7 @@ export const AGENT_CHAT_URL =
 export const AGENT_DOCUMENTS_URL = AGENT_CHAT_URL.replace("/chat", "/documents");
 
 export const AGENT_FOLDERS_URL = AGENT_CHAT_URL.replace("/chat", "/folders");
+export const AGENT_DOCUMENT_FILE_URL = AGENT_CHAT_URL.replace("/chat", "/document");
 
 /** Valor del selector cuando el usuario quiere usar TODAS las carpetas. */
 export const ALL_FOLDERS_SENTINEL = "__all_folders__";
