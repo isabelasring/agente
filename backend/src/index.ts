@@ -18,4 +18,5 @@ app.use("/api", chatRouter);
 app.listen(port, () => {
   // Small runtime log for local development.
   console.log(`Agent backend running on http://localhost:${port}`);
+  console.log(`Node runtime: ${process.version}`);
 });

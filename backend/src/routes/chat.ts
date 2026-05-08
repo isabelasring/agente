@@ -1,8 +1,12 @@
 import { Router } from "express";
+import fs from "node:fs/promises";
+import path from "node:path";
 import {
+  getDocumentsRootPath,
   listCourseDocuments,
   listTopLevelFolders,
-  loadCourseContext
+  loadCourseContext,
+  safeResolveUnderRoot
 } from "../services/context.js";
 import { searchAcrossDocuments } from "../services/search.js";
 import { askTutor, type LlmProvider } from "../services/llm.js";
@@ -31,24 +35,31 @@ router.post("/chat", async (req, res) => {
     }
 
     const folderPrefix = folder?.trim() || undefined;
+    const inventoryItems = await listCourseDocuments(courseId, folderPrefix);
+    const resolvedDocumentId =
+      inventoryItems.some((item) => item.id === selectedDocumentId)
+        ? selectedDocumentId
+        : (inventoryItems[0]?.id ?? selectedDocumentId);
 
-    const [courseContext, inventoryItems, additionalSnippets] = await Promise.all([
-      loadCourseContext({ courseId, documentId: selectedDocumentId }),
-      listCourseDocuments(courseId, folderPrefix),
+    const [courseContext, additionalSnippets] = await Promise.all([
+      loadCourseContext({ courseId, documentId: resolvedDocumentId }),
       searchAcrossDocuments({
         query: message,
-        excludePath: selectedDocumentId,
+        excludePath: resolvedDocumentId,
         maxDocs: 3,
         folderPrefix
       })
     ]);
+    console.log(
+      `[chat] folder=${folderPrefix || "ALL"} requested=${selectedDocumentId} resolved=${resolvedDocumentId} contextLen=${courseContext.trim().length} inventory=${inventoryItems.length}`
+    );
 
     const documentsInventory = inventoryItems.map((item) => item.id);
     const answer = await askTutor({
       message,
       courseContext,
       documentsInventory,
-      activeDocumentPath: selectedDocumentId,
+      activeDocumentPath: resolvedDocumentId,
       additionalSnippets,
       provider
     });
@@ -57,7 +68,7 @@ router.post("/chat", async (req, res) => {
       answer,
       meta: {
         courseId,
-        documentId: selectedDocumentId,
+        documentId: resolvedDocumentId,
         provider: provider || "gemini",
         folder: folderPrefix || null,
         contextLoaded: Boolean(courseContext),
@@ -95,6 +106,42 @@ router.get("/documents", async (req, res) => {
 router.get("/folders", async (_req, res) => {
   const folders = await listTopLevelFolders();
   res.json({ folders });
+});
+
+router.get("/document", async (req, res) => {
+  const rawPath = String(req.query.path || "").trim();
+  if (!rawPath) {
+    res.status(400).json({ error: "Debes enviar path como query param." });
+    return;
+  }
+
+  const root = getDocumentsRootPath();
+  const fullPath = safeResolveUnderRoot(root, rawPath);
+  if (!fullPath) {
+    res.status(400).json({ error: "Ruta de documento invalida." });
+    return;
+  }
+
+  try {
+    const buffer = await fs.readFile(fullPath);
+    const ext = path.extname(fullPath).toLowerCase();
+    const contentType =
+      ext === ".pdf"
+        ? "application/pdf"
+        : ext === ".docx"
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : ext === ".xlsx"
+            ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            : ext === ".md" || ext === ".txt"
+              ? "text/plain; charset=utf-8"
+              : "application/octet-stream";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "no-store");
+    res.send(buffer);
+  } catch {
+    res.status(404).json({ error: "No se encontro el documento." });
+  }
 });
 
 export default router;
