@@ -4,7 +4,9 @@ import { AskProviderInput, getErrorMessage } from "../shared/llmTypes.js";
 export async function askGroq({
   message,
   courseContext,
-  activeDocumentPath
+  documentsInventory,
+  activeDocumentPath,
+  additionalSnippets
 }: AskProviderInput): Promise<string> {
   const groqApiKey = process.env.GROQ_API_KEY;
   if (!groqApiKey) {
@@ -12,18 +14,16 @@ export async function askGroq({
   }
 
   const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
-  // Modo ultraligero para evitar 413 en cuentas free de Groq.
-  const safeContext = trimForGroq(courseContext, 7000);
   const body = {
     model,
     messages: [
       {
         role: "system",
         content: buildSystemPrompt({
-          documentContext: safeContext,
-          documentsInventory: [],
+          documentContext: courseContext,
+          documentsInventory,
           activeDocumentPath,
-          additionalSnippets: []
+          additionalSnippets
         })
       },
       {
@@ -53,7 +53,7 @@ export async function askGroq({
         return "Groq indico limite de uso por ahora (quota/rate limit). Intenta mas tarde.";
       }
       if (response.status === 413) {
-        return "Groq rechazo la solicitud por tamaño/límite de tokens (HTTP 413). Ya recorté contexto para Groq; vuelve a intentar o usa un documento más corto.";
+        return "Groq rechazo la solicitud por tamaño o limite de tokens (HTTP 413). Prueba con un documento mas corto, otro modelo en GROQ_MODEL, o un plan con mayor limite.";
       }
       return `Groq devolvio error HTTP ${response.status}: ${errorText}`;
     }
@@ -66,10 +66,4 @@ export async function askGroq({
   } catch (error) {
     return `Groq devolvio un error: ${getErrorMessage(error)}`;
   }
-}
-
-function trimForGroq(input: string, maxChars: number): string {
-  const t = input.trim();
-  if (t.length <= maxChars) return t;
-  return `${t.slice(0, maxChars)}\n\n[...contenido recortado para cumplir limites de Groq...]`;
 }
