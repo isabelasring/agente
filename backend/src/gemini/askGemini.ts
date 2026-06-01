@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildSystemPrompt } from "../prompts/tutorPrompt.js";
+import { buildOpenAiMessages } from "../shared/chatHistory.js";
 import { AskProviderInput, getErrorMessage } from "../shared/llmTypes.js";
 
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
@@ -14,7 +15,8 @@ export async function askGemini({
   courseContext,
   documentsInventory,
   activeDocumentPath,
-  additionalSnippets
+  additionalSnippets,
+  history = []
 }: AskProviderInput): Promise<string> {
   if (!geminiClient) {
     return "Falta configurar GEMINI_API_KEY en el backend.";
@@ -22,17 +24,32 @@ export async function askGemini({
 
   const configuredModel = process.env.GEMINI_MODEL || "gemini-flash-latest";
   const modelName = normalizeGeminiModel(configuredModel);
-  const model = geminiClient.getGenerativeModel({ model: modelName });
+  const systemInstruction = buildSystemPrompt({
+    documentContext: courseContext,
+    documentsInventory,
+    activeDocumentPath,
+    additionalSnippets
+  });
 
-  const prompt = [
-    buildSystemPrompt({ documentContext: courseContext, documentsInventory, activeDocumentPath, additionalSnippets }),
-    "",
-    "PREGUNTA DEL USUARIO:",
-    message
-  ].join("\n");
+  const model = geminiClient.getGenerativeModel({
+    model: modelName,
+    systemInstruction
+  });
+
+  const geminiHistory = history.map((turn) => ({
+    role: turn.role === "assistant" ? ("model" as const) : ("user" as const),
+    parts: [{ text: turn.content }]
+  }));
 
   try {
-    const result = await model.generateContent(prompt);
+    if (geminiHistory.length > 0) {
+      const chat = model.startChat({ history: geminiHistory });
+      const result = await chat.sendMessage(message);
+      const answer = result.response.text().trim();
+      return answer || "No encuentro esa informacion en el documento.";
+    }
+
+    const result = await model.generateContent(message);
     const answer = result.response.text().trim();
     return answer || "No encuentro esa informacion en el documento.";
   } catch (error) {

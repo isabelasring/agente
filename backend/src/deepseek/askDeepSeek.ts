@@ -1,4 +1,5 @@
 import { buildSystemPrompt } from "../prompts/tutorPrompt.js";
+import { buildOpenAiMessages } from "../shared/chatHistory.js";
 import { AskProviderInput, getErrorMessage } from "../shared/llmTypes.js";
 
 /** OpenAI-compatible: https://api-docs.deepseek.com/ */
@@ -9,7 +10,8 @@ export async function askDeepSeek({
   courseContext,
   documentsInventory,
   activeDocumentPath,
-  additionalSnippets
+  additionalSnippets,
+  history = []
 }: AskProviderInput): Promise<string> {
   const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
   if (!apiKey) {
@@ -19,23 +21,16 @@ export async function askDeepSeek({
   const url = (process.env.DEEPSEEK_API_URL || DEFAULT_DEEPSEEK_CHAT_URL).trim();
   const model = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-v4-flash";
 
+  const systemContent = buildSystemPrompt({
+    documentContext: courseContext,
+    documentsInventory,
+    activeDocumentPath,
+    additionalSnippets
+  });
+
   const body = {
     model,
-    messages: [
-      {
-        role: "system",
-        content: buildSystemPrompt({
-          documentContext: courseContext,
-          documentsInventory,
-          activeDocumentPath,
-          additionalSnippets
-        })
-      },
-      {
-        role: "user",
-        content: message
-      }
-    ],
+    messages: buildOpenAiMessages(systemContent, history, message),
     temperature: 0.4,
     stream: false
   };

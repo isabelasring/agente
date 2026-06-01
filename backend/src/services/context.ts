@@ -56,17 +56,50 @@ export async function listCourseDocuments(
 }
 
 /**
- * Devuelve las carpetas top-level dentro de la raiz indexada.
- * Sirve para mostrar el desplegable de seleccion de carpeta en la UI.
+ * Devuelve carpetas directas bajo `root` o bajo `relativeParent` (ej. ESTANDARES).
+ * Sin parent: bibliotecas en data/. Con parent: subcarpetas dentro de esa biblioteca.
  */
-export async function listTopLevelFolders(): Promise<string[]> {
+export type FolderEntry = {
+  name: string;
+  kind: "directory" | "file";
+};
+
+export async function listTopLevelFolders(relativeParent?: string): Promise<string[]> {
+  const entries = await listFolderEntries(relativeParent);
+  return entries.filter((e) => e.kind === "directory").map((e) => e.name);
+}
+
+/** Hijos directos de una biblioteca: subcarpetas y archivos indexables (.pdf, .docx, etc.). */
+export async function listFolderEntries(relativeParent?: string): Promise<FolderEntry[]> {
   const root = getDocumentsRootPath();
+  const parent = normalizeFolderPrefix(relativeParent);
+  const dir = parent ? safeResolveUnderRoot(root, parent) : root;
+  if (!dir) return [];
+
   try {
-    const entries = await fs.readdir(root, { withFileTypes: true });
-    return entries
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-      .map((entry) => entry.name)
-      .sort((a, b) => a.localeCompare(b));
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const out: FolderEntry[] = [];
+
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue;
+
+      if (entry.isDirectory()) {
+        out.push({ name: entry.name, kind: "directory" });
+        continue;
+      }
+
+      if (!entry.isFile() || IGNORED_FILE_NAMES.has(entry.name.toLowerCase())) continue;
+
+      const relPosix = parent ? `${parent}/${entry.name}` : entry.name;
+      if (fileToDocumentItem(relPosix.replace(/\\/g, "/"))) {
+        out.push({ name: entry.name, kind: "file" });
+      }
+    }
+
+    return out.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "directory" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
   } catch {
     return [];
   }

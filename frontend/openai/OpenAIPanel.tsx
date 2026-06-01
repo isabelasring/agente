@@ -9,6 +9,7 @@ import {
   NO_DOCUMENT_SENTINEL
 } from "../shared/agentConfig";
 import type { ChatMessage } from "../shared/agentTypes";
+import { MessageContent } from "../shared/MessageContent";
 
 type Props = {
   className?: string;
@@ -120,7 +121,7 @@ export default function OpenAIPanel({
       <div className="messages">
         {messages.map((message, index) => (
           <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
-            {message.content}
+            <MessageContent role={message.role} content={message.content} />
           </article>
         ))}
         {loading && (

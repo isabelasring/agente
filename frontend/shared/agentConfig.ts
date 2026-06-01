@@ -5,9 +5,20 @@ export const AGENT_DOCUMENTS_URL = AGENT_CHAT_URL.replace("/chat", "/documents")
 
 export const AGENT_FOLDERS_URL = AGENT_CHAT_URL.replace("/chat", "/folders");
 export const AGENT_DOCUMENT_FILE_URL = AGENT_CHAT_URL.replace("/chat", "/document");
+export const AGENT_DOCUMENT_TEXT_URL = AGENT_CHAT_URL.replace("/chat", "/document/text");
+export const AGENT_DOCUMENT_HTML_URL = AGENT_CHAT_URL.replace("/chat", "/document/html");
 
-/** Valor del selector cuando el usuario quiere usar TODAS las carpetas. */
+/** Valor del selector cuando el usuario quiere usar TODAS las carpetas del alcance actual. */
 export const ALL_FOLDERS_SENTINEL = "__all_folders__";
+
+/** Une biblioteca + subcarpeta en el prefijo que filtra documentos en el backend. */
+export function buildFolderPrefix(library: string, subfolder: string): string {
+  const lib = library.trim();
+  const sub = subfolder.trim();
+  if (!lib || lib === ALL_FOLDERS_SENTINEL) return "";
+  if (!sub || sub === ALL_FOLDERS_SENTINEL) return lib;
+  return `${lib}/${sub}`;
+}
 
 /** Identificador enviado al API (meta) */
 export const COURSE_ID = process.env.NEXT_PUBLIC_COURSE_ID || "geotrends";
