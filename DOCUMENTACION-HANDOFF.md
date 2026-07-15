@@ -27,7 +27,7 @@ La idea central del producto es el **Agente inteligente (Smart)**: un solo chat 
 | Frontend | Next.js 14 (App Router) + React 18 + TypeScript |
 | Backend | Node.js + Express 4 + TypeScript (ESM) |
 | Documentos | Carpeta local en disco (`backend/data/` por defecto) |
-| LLMs | Gemini, Groq, DeepSeek, OpenAI, Hugging Face, Ollama |
+| LLMs | Gemini, Groq, DeepSeek, Ollama |
 
 ### Qué viene en el clone y qué NO
 
@@ -72,7 +72,7 @@ Haz esto **antes** de `npm run dev`.
    ```
    - `PORT=3001` es obligatorio para alinear con el front (si falta, el código usa 4000 y el front no conecta).
    - `GEOTRENDS_DOCUMENTS_ROOT=data` apunta a la carpeta de documentos relativa al backend.
-   - Las keys de OpenAI / Hugging Face / Ollama solo hacen falta si vas a probar esos paneles.
+   - La config de Ollama solo hace falta si vas a probar ese panel (local).
 
 > **Nunca** subas `backend/.env` a Git. Contiene secretos.
 
@@ -190,8 +190,6 @@ backend/
     ├── gemini/askGemini.ts        # Adapter Gemini (SDK oficial)
     ├── groq/askGroq.ts            # Adapter Groq (fetch OpenAI-compatible + shrink 413)
     ├── deepseek/askDeepSeek.ts    # Adapter DeepSeek (fetch OpenAI-compatible)
-    ├── openai/askOpenAI.ts        # Adapter OpenAI
-    ├── huggingface/askHuggingFace.ts
     └── ollama/askOllama.ts        # Adapter Ollama local
 ```
 
@@ -238,7 +236,7 @@ backend/
 | `courseId` | Sí | Valida el body; hoy el FS **no filtra por courseId** (legacy). Valor típico: `geotrends` |
 | `documentId` (o `lessonId`) | Sí | Ruta relativa al root documental, o sentinel `__geotrends_no_doc__` |
 | `folder` | No | Prefijo biblioteca/subcarpeta para acotar inventario y búsqueda |
-| `provider` | No | `gemini` \| `groq` \| `deepseek` \| `openai` \| `huggingface` \| `ollama` \| `auto` |
+| `provider` | No | `gemini` \| `groq` \| `deepseek` \| `ollama` \| `auto` |
 | `autoRoute` | No | Si `true` o `provider === "auto"` → entra al smart router |
 | `history` | No | Solo el Smart lo envía hoy; el backend lo recorta a 12 mensajes |
 
@@ -321,7 +319,7 @@ Dos funciones clave:
 
 `askTutor` hace un `switch` a:
 
-- `askGemini`, `askGroq`, `askDeepSeek`, `askOpenAI`, `askHuggingFace`, `askOllama`.
+- `askGemini`, `askGroq`, `askDeepSeek`, `askOllama`.
 
 Si no hay contexto ni snippets, devuelve un mensaje claro de “no hay contenido cargado…”.
 
@@ -340,7 +338,7 @@ En lugar de forzar al usuario a elegir Gemini vs Groq vs DeepSeek:
    - **DeepSeek** → analítico, detallado, seguimiento / complejidad.
    - **Gemini** → documentos enormes, default general, y **fallback** si Groq/DeepSeek fallan.
 
-Los otros paneles (OpenAI, HF, Ollama, etc.) existen para **comparar proveedores lado a lado** en demos; el producto “oficial” es el Smart.
+El panel de Ollama (y los fijos Gemini/Groq/DeepSeek) sirve para **comparar proveedores** en demos; el producto “oficial” es el Smart.
 
 ### 5.2 Dónde vive la lógica de decisión
 
@@ -441,8 +439,6 @@ Patrón común en todos:
 | **Gemini** | `src/gemini/askGemini.ts` | SDK `@google/generative-ai` | Sí | `GEMINI_API_KEY`, `GEMINI_MODEL` | `gemini-flash-latest` |
 | **Groq** | `src/groq/askGroq.ts` | `https://api.groq.com/openai/v1/chat/completions` | Sí | `GROQ_API_KEY`, `GROQ_MODEL`, opcional `GROQ_MAX_DOCUMENT_CHARS` | `llama-3.1-8b-instant` |
 | **DeepSeek** | `src/deepseek/askDeepSeek.ts` | `https://api.deepseek.com/chat/completions` | Sí | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, opcional `DEEPSEEK_API_URL` | `deepseek-v4-flash` |
-| **OpenAI** | `src/openai/askOpenAI.ts` | `https://api.openai.com/v1/chat/completions` | **No** | `OPENAI_API_KEY`, `OPENAI_MODEL` | `gpt-4o-mini` |
-| **Hugging Face** | `src/huggingface/askHuggingFace.ts` | `https://router.huggingface.co/v1/chat/completions` | **No** | `HUGGINGFACE_API_KEY`, `HUGGINGFACE_MODEL` | `meta-llama/Llama-3.2-1B-Instruct` |
 | **Ollama** | `src/ollama/askOllama.ts` | `{OLLAMA_BASE_URL}/api/chat` (default `http://127.0.0.1:11434`) | **No** | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | `llama3.2` |
 
 #### Dónde sacar cada API key
@@ -452,8 +448,6 @@ Patrón común en todos:
 | Gemini | [Google AI Studio](https://aistudio.google.com/apikey) |
 | Groq | [console.groq.com/keys](https://console.groq.com/keys) |
 | DeepSeek | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
-| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-| Hugging Face | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (permiso “Make calls to Inference Providers”) |
 | Ollama | No usa cloud key; instalar Ollama y `ollama pull llama3.2` |
 
 ### Notas por proveedor
@@ -461,7 +455,7 @@ Patrón común en todos:
 - **Gemini**: modelo por defecto `gemini-flash-latest`. Es el más tolerante a documentos grandes y el fallback del smart.
 - **Groq**: si el payload es muy grande → HTTP 413. El adapter hace **retry con shrink progresivo** (recorta doc, inventario, snippets) varias veces. Por eso no conviene mandar PDFs enormes enteros a Groq.
 - **DeepSeek**: API compatible con Chat Completions; model default en `.env.example`: `deepseek-v4-flash`. Si no hay key, el router cae a Gemini en preguntas complejas.
-- **OpenAI / HF / Ollama**: disponibles en paneles de comparación; **no entran** al auto-route del Smart.
+- **Ollama**: disponible en panel de comparación; **no entra** al auto-route del Smart.
 
 Panel frontend correspondiente (solo UI; la API real está en backend):
 
@@ -471,8 +465,6 @@ Panel frontend correspondiente (solo UI; la API real está en backend):
 | Gemini | `frontend/gemini/GeminiPanel.tsx` |
 | Groq | `frontend/groq/GroqPanel.tsx` |
 | DeepSeek | `frontend/deepseek/DeepSeekPanel.tsx` |
-| OpenAI | `frontend/openai/OpenAIPanel.tsx` |
-| Hugging Face | `frontend/huggingface/HuggingFacePanel.tsx` |
 | Ollama | `frontend/ollama/OllamaPanel.tsx` |
 
 ---
@@ -496,7 +488,7 @@ frontend/
 │   ├── MessageContent.tsx         # Assistant → markdown; user → texto
 │   └── ChatMarkdown.tsx           # Markdown casero (sin react-markdown)
 ├── smart/SmartAgentPanel.tsx      # Agente auto-route
-├── gemini|groq|deepseek|openai|huggingface|ollama/  # Paneles por proveedor
+├── gemini|groq|deepseek|ollama/  # Paneles por proveedor
 ├── public/agent-avatar.png
 └── agent/                         # Carpeta vacía (sin uso)
 ```
@@ -576,8 +568,6 @@ Plantilla: `backend/.env.example`
 | `GROQ_API_KEY` / `GROQ_MODEL` | Groq |
 | `GROQ_MAX_DOCUMENT_CHARS` | Opcional: techo de chars del doc a Groq |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` / `DEEPSEEK_API_URL` | DeepSeek |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` | OpenAI |
-| `HUGGINGFACE_API_KEY` / `HUGGINGFACE_MODEL` | Hugging Face |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Ollama local |
 
 Para el **Agente inteligente** mínimo operativo:
@@ -637,7 +627,7 @@ Archivos `.doc` antiguos (no `.docx`) **no** se indexan.
 | Frontend paneles fijos | UI de chat, pero el POST normalmente manda solo el mensaje actual |
 | Backend `chatHistory.ts` | `normalizeHistory` + `trimHistory` (máx **12** mensajes) |
 | Gemini / Groq / DeepSeek | Reciben historial |
-| OpenAI / HF / Ollama | **No** reciben historial hoy |
+| Ollama | **No** recibe historial hoy |
 
 ---
 
@@ -792,8 +782,7 @@ pandoc DOCUMENTACION-HANDOFF.md -t html5 -o /tmp/handoff-geobot.html --standalon
                     └─────────────────┬───────────────────┘
                                       │ HTTPS / local
                     ┌─────────────────▼───────────────────┐
-                    │  Gemini · Groq · DeepSeek · OpenAI  │
-                    │  Hugging Face · Ollama              │
+                    │  Gemini · Groq · DeepSeek · Ollama  │
                     └─────────────────────────────────────┘
 ```
 

@@ -1,8 +1,6 @@
 import { askGemini } from "../gemini/askGemini.js";
 import { askGroq } from "../groq/askGroq.js";
-import { askHuggingFace } from "../huggingface/askHuggingFace.js";
 import { askOllama } from "../ollama/askOllama.js";
-import { askOpenAI } from "../openai/askOpenAI.js";
 import { askDeepSeek } from "../deepseek/askDeepSeek.js";
 import type { ChatTurn } from "../shared/chatHistory.js";
 import { budgetDocumentContext } from "./contextBudget.js";
@@ -11,9 +9,7 @@ import { pickProvider, type RoutedProvider } from "./providerRouter.js";
 export type LlmProvider =
   | "gemini"
   | "groq"
-  | "huggingface"
   | "ollama"
-  | "openai"
   | "deepseek"
   | "auto";
 
@@ -55,12 +51,8 @@ export async function askTutor({
   switch (provider) {
     case "groq":
       return askGroq(payload);
-    case "huggingface":
-      return askHuggingFace(payload);
     case "ollama":
       return askOllama(payload);
-    case "openai":
-      return askOpenAI(payload);
     case "deepseek":
       return askDeepSeek(payload);
     default:

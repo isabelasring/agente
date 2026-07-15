@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react";
 import GeminiPanel from "../gemini/GeminiPanel";
 import GroqPanel from "../groq/GroqPanel";
-import HuggingFacePanel from "../huggingface/HuggingFacePanel";
 import OllamaPanel from "../ollama/OllamaPanel";
-import OpenAIPanel from "../openai/OpenAIPanel";
 import DeepSeekPanel from "../deepseek/DeepSeekPanel";
 import SmartAgentPanel from "../smart/SmartAgentPanel";
 import {
@@ -19,9 +17,7 @@ import { useCourseDocuments, useLibraryChildren, useTopLevelFolders } from "../s
 const AGENT_PANELS = [
   { label: "Gemini", cssClass: "agent-gemini" },
   { label: "Groq", cssClass: "agent-groq" },
-  { label: "Hugging Face", cssClass: "agent-huggingface" },
   { label: "Ollama", cssClass: "agent-ollama" },
-  { label: "OpenAI", cssClass: "agent-openai" },
   { label: "DeepSeek", cssClass: "agent-deepseek" }
 ] as const;
 
@@ -316,7 +312,7 @@ export default function HomePage() {
 
           <section>
             <h2 className="section-title">Comparacion por proveedor</h2>
-            <p className="section-subtitle">Los 6 paneles individuales siguen disponibles.</p>
+            <p className="section-subtitle">Los 4 paneles individuales siguen disponibles.</p>
             <div className="agents-grid">
           <GeminiPanel
             key={`gemini-${selectedFolder}-${selectedDocumentId}`}
@@ -334,36 +330,20 @@ export default function HomePage() {
             displayName={AGENT_PANELS[1].label}
           />
 
-          <HuggingFacePanel
-            key={`huggingface-${selectedFolder}-${selectedDocumentId}`}
+          <OllamaPanel
+            key={`ollama-${selectedFolder}-${selectedDocumentId}`}
             selectedDocumentId={selectedDocumentId}
             selectedFolder={selectedFolder}
             className={AGENT_PANELS[2].cssClass}
             displayName={AGENT_PANELS[2].label}
           />
 
-          <OllamaPanel
-            key={`ollama-${selectedFolder}-${selectedDocumentId}`}
-            selectedDocumentId={selectedDocumentId}
-            selectedFolder={selectedFolder}
-            className={AGENT_PANELS[3].cssClass}
-            displayName={AGENT_PANELS[3].label}
-          />
-
-          <OpenAIPanel
-            key={`openai-${selectedFolder}-${selectedDocumentId}`}
-            selectedDocumentId={selectedDocumentId}
-            selectedFolder={selectedFolder}
-            className={AGENT_PANELS[4].cssClass}
-            displayName={AGENT_PANELS[4].label}
-          />
-
           <DeepSeekPanel
             key={`deepseek-${selectedFolder}-${selectedDocumentId}`}
             selectedDocumentId={selectedDocumentId}
             selectedFolder={selectedFolder}
-            className={AGENT_PANELS[5].cssClass}
-            displayName={AGENT_PANELS[5].label}
+            className={AGENT_PANELS[3].cssClass}
+            displayName={AGENT_PANELS[3].label}
           />
             </div>
           </section>

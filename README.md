@@ -12,7 +12,7 @@ Tutor sobre documentos locales (PDF, DOCX, XLSX, MD, TXT) con varios LLMs y un *
 
 - **Frontend:** Next.js 14 + React + TypeScript (`frontend/`)
 - **Backend:** Node.js + Express + TypeScript (`backend/`)
-- **LLMs:** Gemini, Groq, DeepSeek, OpenAI, Hugging Face, Ollama
+- **LLMs:** Gemini, Groq, DeepSeek, Ollama
 - **Documentos:** carpeta local `GEOTRENDS_DOCUMENTS_ROOT` (por defecto `backend/data/`)
 
 ## Arranque rápido

@@ -147,7 +147,7 @@ export async function askGroq(input: AskProviderInput): Promise<string> {
       if (response.status === 413) {
         return (
           "Groq rechazo la solicitud por tamaño (HTTP 413) incluso recortando el contexto varias veces. " +
-          "Prueba: GROQ_MAX_DOCUMENT_CHARS=12000 en backend/.env, elegir una subcarpeta en el panel, un PDF mas corto, o usar OpenAI/Gemini."
+          "Prueba: GROQ_MAX_DOCUMENT_CHARS=12000 en backend/.env, elegir una subcarpeta en el panel, un PDF mas corto, o usar Gemini."
         );
       }
 
