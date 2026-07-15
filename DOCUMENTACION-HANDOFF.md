@@ -117,6 +117,8 @@ El **Agente inteligente** elige entre Gemini, Groq y DeepSeek. Sin esas tres key
 
 #### Ollama — opcional (panel de comparación local, sin API key cloud)
 
+Guía completa del panel Ollama (install, env, UI, errores): **[sección 6.5](#65-agente-ollama-panel-fijo--local-sin-api-key)**.
+
 1. Instala Ollama: **[https://ollama.com](https://ollama.com)**
 2. En una terminal:
    ```bash
@@ -573,49 +575,143 @@ Los paneles de comparación (GeminiPanel, GroqPanel, …) envían un `provider` 
 
 ---
 
-## 6. Cómo se implementa cada LLM (adapters)
+## 6. Agentes / paneles LLM (Smart + comparación)
+
+En la UI, cuando ya elegiste documento, ves **dos bloques**:
+
+1. **Agente inteligente (Smart)** — un solo chat; el backend elige Gemini / Groq / DeepSeek.
+2. **Comparación por proveedor** — **4 paneles fijos**: Gemini, Groq, Ollama, DeepSeek. Cada uno fuerza ese `provider` y sirve para demos / comparar respuestas.
+
+| Agente en la UI | ¿Entra al Smart? | ¿API key cloud? | Archivo UI | Archivo backend |
+|-----------------|------------------|-----------------|------------|-----------------|
+| **Smart** | Es el Smart | Usa Gemini + Groq (+ DeepSeek) | `frontend/smart/SmartAgentPanel.tsx` | `askSmartTutor` + `providerRouter.ts` |
+| **Gemini** | Sí (también panel fijo) | Sí `GEMINI_API_KEY` | `frontend/gemini/GeminiPanel.tsx` | `src/gemini/askGemini.ts` |
+| **Groq** | Sí (también panel fijo) | Sí `GROQ_API_KEY` | `frontend/groq/GroqPanel.tsx` | `src/groq/askGroq.ts` |
+| **DeepSeek** | Sí (también panel fijo) | Sí `DEEPSEEK_API_KEY` | `frontend/deepseek/DeepSeekPanel.tsx` | `src/deepseek/askDeepSeek.ts` |
+| **Ollama** | **No** | **No** (modelo local) | `frontend/ollama/OllamaPanel.tsx` | `src/ollama/askOllama.ts` |
+
+Comportamiento común de los **paneles fijos**:
+
+- El POST a `/api/chat` lleva `provider: "gemini" | "groq" | "deepseek" | "ollama"` (fijo).
+- **No** envían `autoRoute` ni `history` al API (cada pregunta va “suelta”, aunque la UI muestre el hilo).
+- Usan el mismo documento activo / carpeta que el wizard.
+- Al cambiar documento, el `key` en `page.tsx` remonta el panel → el chat se reinicia.
+
+El **Smart** sí manda `autoRoute: true`, `provider: "auto"` e `history` (ver sección 5).
+
+---
+
+### 6.1 Cómo se implementa cada adapter (backend)
 
 Patrón común en todos:
 
-1. Reciben `AskProviderInput` (`message`, `courseContext`, inventario, snippets, `history`).
+1. Reciben `AskProviderInput` (`message`, `courseContext`, inventario, snippets, `history` opcional).
 2. Construyen system prompt con `buildSystemPrompt`.
 3. Llaman a su API.
-4. Devuelven un **string** (respuesta o mensaje de error legible). No lanzan siempre; varios errors se convierten en texto.
+4. Devuelven un **string** (respuesta o mensaje de error legible).
 
-| Proveedor | Archivo backend | Endpoint / SDK real | Historial | Env keys | Modelo default |
-|-----------|-----------------|---------------------|-----------|----------|----------------|
-| **Gemini** | `src/gemini/askGemini.ts` | SDK `@google/generative-ai` | Sí | `GEMINI_API_KEY`, `GEMINI_MODEL` | `gemini-flash-latest` |
-| **Groq** | `src/groq/askGroq.ts` | `https://api.groq.com/openai/v1/chat/completions` | Sí | `GROQ_API_KEY`, `GROQ_MODEL`, opcional `GROQ_MAX_DOCUMENT_CHARS` | `llama-3.1-8b-instant` |
-| **DeepSeek** | `src/deepseek/askDeepSeek.ts` | `https://api.deepseek.com/chat/completions` | Sí | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, opcional `DEEPSEEK_API_URL` | `deepseek-v4-flash` |
-| **Ollama** | `src/ollama/askOllama.ts` | `{OLLAMA_BASE_URL}/api/chat` (default `http://127.0.0.1:11434`) | **No** | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | `llama3.2` |
+| Proveedor | Endpoint / SDK | Historial en adapter | Env keys | Modelo default |
+|-----------|----------------|----------------------|----------|----------------|
+| **Gemini** | SDK `@google/generative-ai` | Sí (cuando el Smart lo envía) | `GEMINI_API_KEY`, `GEMINI_MODEL` | `gemini-flash-latest` |
+| **Groq** | `https://api.groq.com/openai/v1/chat/completions` | Sí | `GROQ_API_KEY`, `GROQ_MODEL`, opcional `GROQ_MAX_DOCUMENT_CHARS` | `llama-3.1-8b-instant` |
+| **DeepSeek** | `https://api.deepseek.com/chat/completions` | Sí | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, opcional `DEEPSEEK_API_URL` | `deepseek-v4-flash` |
+| **Ollama** | `{OLLAMA_BASE_URL}/api/chat` | **No** (solo system + user) | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | `llama3.2` |
 
-#### Dónde sacar cada API key
+Crear keys cloud: **[sección 2.4](#24-cómo-crear-las-api-keys-paso-a-paso--enlaces)**.
 
-Pasos detallados (crear cuenta, copiar, pegar en `.env`): **[sección 2.4](#24-cómo-crear-las-api-keys-paso-a-paso--enlaces)**.
+---
 
-| Proveedor | URL |
-|-----------|-----|
-| Gemini | [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| Groq | [https://console.groq.com/keys](https://console.groq.com/keys) |
-| DeepSeek | [https://platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
-| Ollama | [https://ollama.com](https://ollama.com) (sin cloud key; `ollama pull llama3.2`) |
+### 6.2 Agente Gemini (panel fijo)
 
-### Notas por proveedor
+- **Para qué:** mismas respuestas “tipo Gemini” sin auto-route; útil para comparar con Groq/DeepSeek/Ollama.
+- **Requisito:** `GEMINI_API_KEY` en `backend/.env` → [crear key](https://aistudio.google.com/apikey).
+- **Modelo:** `GEMINI_MODEL=gemini-flash-latest` (o el que pongas).
+- **En la UI:** panel “Gemini” del grid. Envía `provider: "gemini"`.
+- **Notas:** es el más tolerante a documentos grandes; en el Smart es default y **fallback** si fallan Groq/DeepSeek.
 
-- **Gemini**: modelo por defecto `gemini-flash-latest`. Es el más tolerante a documentos grandes y el fallback del smart.
-- **Groq**: si el payload es muy grande → HTTP 413. El adapter hace **retry con shrink progresivo** (recorta doc, inventario, snippets) varias veces. Por eso no conviene mandar PDFs enormes enteros a Groq.
-- **DeepSeek**: API compatible con Chat Completions; model default en `.env.example`: `deepseek-v4-flash`. Si no hay key, el router cae a Gemini en preguntas complejas.
-- **Ollama**: disponible en panel de comparación; **no entra** al auto-route del Smart.
+### 6.3 Agente Groq (panel fijo)
 
-Panel frontend correspondiente (solo UI; la API real está en backend):
+- **Para qué:** respuestas rápidas con Llama vía Groq; comparar latencia vs otros.
+- **Requisito:** `GROQ_API_KEY` → [console.groq.com/keys](https://console.groq.com/keys).
+- **Modelo:** `GROQ_MODEL=llama-3.1-8b-instant`.
+- **En la UI:** panel “Groq”. Envía `provider: "groq"`.
+- **Notas:** con PDFs enormes puede devolver HTTP 413; el adapter hace shrink/reintento. Opcional: `GROQ_MAX_DOCUMENT_CHARS=12000`.
 
-| UI | Carpeta / archivo |
-|----|-------------------|
-| Smart | `frontend/smart/SmartAgentPanel.tsx` |
-| Gemini | `frontend/gemini/GeminiPanel.tsx` |
-| Groq | `frontend/groq/GroqPanel.tsx` |
-| DeepSeek | `frontend/deepseek/DeepSeekPanel.tsx` |
-| Ollama | `frontend/ollama/OllamaPanel.tsx` |
+### 6.4 Agente DeepSeek (panel fijo)
+
+- **Para qué:** respuestas más analíticas / detalladas; comparar calidad vs Gemini/Groq.
+- **Requisito:** `DEEPSEEK_API_KEY` → [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) (billing por uso).
+- **Modelo:** `DEEPSEEK_MODEL=deepseek-v4-flash`.
+- **En la UI:** panel “DeepSeek”. Envía `provider: "deepseek"`.
+- **Notas:** si no hay key, el panel fijo falla con mensaje claro; en el Smart, las preguntas complejas caen a Gemini.
+
+### 6.5 Agente Ollama (panel fijo — local, sin API key)
+
+Ollama es el agente **local**: el modelo corre en tu máquina. **No usa API key cloud** y **no participa** del Agente inteligente (Smart). Solo responde cuando usas el panel “Ollama” en la UI.
+
+#### A) Instalar y arrancar Ollama
+
+1. Descarga e instala: **[https://ollama.com](https://ollama.com)**
+2. En una terminal, descarga el modelo que usa el proyecto por defecto:
+   ```bash
+   ollama pull llama3.2
+   ```
+3. Deja el servicio corriendo (en muchas instalaciones de desktop ya corre solo; si no):
+   ```bash
+   ollama serve
+   ```
+4. Comprueba que responde (puerto por defecto **11434**):
+   ```bash
+   curl http://127.0.0.1:11434/api/tags
+   ```
+   Debe listar modelos (incluido `llama3.2`).
+
+#### B) Configurar `backend/.env` para Ollama
+
+```env
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2
+```
+
+- Si cambias de modelo (`mistral`, `llama3.1`, etc.): haz `ollama pull <modelo>` y actualiza `OLLAMA_MODEL`.
+- Si Ollama corre en otra máquina/puerto: cambia `OLLAMA_BASE_URL`.
+- Reinicia el **backend** después de editar `.env`.
+
+#### C) Usarlo en la UI
+
+1. Backend + frontend en marcha (`npm run dev` en ambos).
+2. Ollama instalado, modelo bajado y servicio activo.
+3. Elige biblioteca/documento en Geobot.
+4. Baja al grid **Comparación por proveedor** → panel **Ollama**.
+5. Pregunta sobre el documento. El front manda `provider: "ollama"` a `/api/chat`.
+
+#### D) Qué hace el backend (`askOllama.ts`)
+
+- POST a `{OLLAMA_BASE_URL}/api/chat` con `stream: false`.
+- Mensajes: `system` (prompt tutor + contexto del doc) + `user` (pregunta).
+- **No** reenvía historial de turnos anteriores.
+- Temperatura fija `0.4`.
+
+#### E) Errores frecuentes de Ollama
+
+| Síntoma | Causa | Qué hacer |
+|---------|-------|-----------|
+| Error de conexión / fetch failed | `ollama serve` no está corriendo | Arranca Ollama / `ollama serve` |
+| `model ... not found` | No bajaste el modelo | `ollama pull llama3.2` (o el de `OLLAMA_MODEL`) |
+| Respuestas lentas o PC se congela | Modelo grande / poca RAM | Prueba un modelo más chico o cierra otras apps |
+| Panel OK pero Smart nunca usa Ollama | Intencional | Ollama solo es el panel fijo; Smart = Gemini/Groq/DeepSeek |
+
+---
+
+### 6.6 Resumen: Smart vs paneles fijos
+
+| | Agente inteligente | Paneles Gemini / Groq / DeepSeek / Ollama |
+|--|--------------------|-------------------------------------------|
+| Cuántos chats | 1 | 4 (uno por proveedor) |
+| Quién elige el LLM | Backend (`providerRouter`) | El usuario (el panel que pulses) |
+| Historial al API | Sí (últimos turnos) | No |
+| Incluye Ollama | No | Sí (solo panel Ollama) |
+| Ideal para | Producto / demos “un solo tutor” | Comparar modelos lado a lado |
 
 ---
 
@@ -653,7 +749,7 @@ Orquesta Geobot:
 4. **Preview** del documento (`DocumentPreview`).
 5. Solo con selección lista:
    - Sección **Agente inteligente** (`SmartAgentPanel`).
-   - Grid **Comparación por proveedor** (6 paneles).
+   - Grid **Comparación por proveedor** (4 paneles: Gemini, Groq, Ollama, DeepSeek).
 
 Estado levantado en la página: biblioteca, subcarpeta, `selectedDocumentId`, etc.
 
@@ -893,6 +989,7 @@ pandoc DOCUMENTACION-HANDOFF.md -t html5 -o /tmp/handoff-geobot.html --standalon
 - [ ] Abrir [http://localhost:3000](http://localhost:3000) y [http://localhost:3001/health](http://localhost:3001/health)
 - [ ] Ver bibliotecas en el wizard (si no, falta `data/`)
 - [ ] Pregunta corta → badge **Groq**; pregunta analítica → **DeepSeek** o Gemini
+- [ ] (Opcional) Instalar Ollama, `ollama pull llama3.2`, probar el panel **Ollama** (§6.5)
 - [ ] Leer código clave: `providerRouter.ts`, `llm.ts`, `routes/chat.ts`, `SmartAgentPanel.tsx`
 
 ---
