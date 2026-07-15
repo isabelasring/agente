@@ -2,6 +2,8 @@
 
 > Documento para quien asuma el mantenimiento del proyecto.
 > Explica **qué es**, **dónde está cada cosa**, **cómo se conectan frontend y backend**, **cómo se implementa cada LLM**, y la **propuesta del agente inteligente** (varios modelos en uno, según la complejidad de la pregunta).
+>
+> **Si acabas de recibir el proyecto:** empieza por la **[sección 2 — Guía completa de puesta en marcha](#2-stack-y-guía-completa-de-puesta-en-marcha)** (clonar, crear API keys, configurar `.env`, documentos y `npm run dev`).
 
 ---
 
@@ -20,7 +22,11 @@ La idea central del producto es el **Agente inteligente (Smart)**: un solo chat 
 
 ---
 
-## 2. Stack y cómo arrancar
+## 2. Stack y guía completa de puesta en marcha
+
+Esta sección es la más importante para quien **recién recibe** el proyecto. Síguela en orden.
+
+### 2.0 Stack
 
 | Capa | Tecnología |
 |------|------------|
@@ -29,118 +35,260 @@ La idea central del producto es el **Agente inteligente (Smart)**: un solo chat 
 | Documentos | Carpeta local en disco (`backend/data/` por defecto) |
 | LLMs | Gemini, Groq, DeepSeek, Ollama |
 
-### Qué viene en el clone y qué NO
+**Repo:** [https://github.com/isabelasring/agente](https://github.com/isabelasring/agente) (rama `main`).
+
+### 2.1 Requisitos previos (en tu máquina)
+
+| Requisito | Notas |
+|-----------|--------|
+| **Node.js** 18+ (recomendado 20 LTS) | Comprueba con `node -v` y `npm -v` |
+| **Git** | Para clonar el repo |
+| Cuentas cloud para API keys | Al menos Gemini + Groq; DeepSeek recomendado para el Smart completo |
+| (Opcional) **Ollama** | Solo si vas a probar el panel Ollama local: [https://ollama.com](https://ollama.com) |
+
+No hace falta Docker ni base de datos: todo corre en local con archivos en disco.
+
+### 2.2 Qué viene al clonar y qué NO
 
 | Ítem | ¿Viene al clonar? | Acción |
 |------|-------------------|--------|
 | Código `frontend/` + `backend/src/` | Sí | Nada extra |
-| `frontend/.env.local` | **Sí** (está trackeado en Git) | Ya apunta a `http://localhost:3001/api/chat`. Solo cámbialo si el backend usa otra URL/puerto |
-| `backend/.env.example` | Sí | Es la plantilla **sin** keys |
-| `backend/.env` | **No** (gitignore) | Hay que crearlo / recibirlo (ver abajo) |
-| `backend/data/` | **No** (gitignore) | Hay que copiarla desde OneDrive/ZIP (ver abajo) |
+| `frontend/.env.local` | **Sí** (versionado) | Ya apunta a `http://localhost:3001/api/chat` |
+| `backend/.env.example` | Sí | Plantilla **sin** keys reales |
+| `backend/.env` | **No** (`.gitignore`) | Debes crearlo tú (paso 2.4–2.5) |
+| `backend/data/` | **No** (gitignore) | Debes montarla (paso 2.6) |
 
-Sin `.env` no hay LLM. Sin `data/` el wizard no muestra bibliotecas.
+Sin `backend/.env` con keys → el chat responde *“Falta configurar …_API_KEY”*.  
+Sin `backend/data/` → el wizard no muestra bibliotecas.
+
+### 2.3 Clonar el proyecto
+
+```bash
+git clone https://github.com/isabelasring/agente.git
+cd agente
+```
+
+(Si usas otro nombre de carpeta, no importa; las rutas relativas `backend/` y `frontend/` son las que valen.)
 
 ---
 
-### Primera vez: preparar `.env` y la carpeta `data/` (obligatorio)
+### 2.4 Cómo crear las API keys (paso a paso + enlaces)
+
+El **Agente inteligente** elige entre Gemini, Groq y DeepSeek. Sin esas tres keys el producto queda incompleto (si falta una, esa ruta falla o cae a Gemini).
+
+> **Regla de oro:** pega la key **justo después del `=`**, sin espacios ni comillas.
+> Mal: `GROQ_API_KEY= gsk_xxx` · Bien: `GROQ_API_KEY=gsk_xxx`
+
+#### Gemini (Google) — obligatoria para Smart (default + fallback)
+
+1. Abre: **[https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)**
+2. Inicia sesión con una cuenta Google.
+3. Pulsa **Create API key** (crea o elige un proyecto de Google Cloud si te lo pide).
+4. Copia la key (suele empezar por `AIza…` u otro formato de Google AI).
+5. En `backend/.env` déjala así:
+   ```env
+   GEMINI_API_KEY=pega_aqui_sin_espacios
+   GEMINI_MODEL=gemini-flash-latest
+   ```
+
+#### Groq — obligatoria para preguntas cortas/rápidas del Smart
+
+1. Abre: **[https://console.groq.com/keys](https://console.groq.com/keys)**  
+   (si no tienes cuenta: [https://console.groq.com](https://console.groq.com) → sign up)
+2. **Create API Key** → ponle un nombre (ej. `geobot`) → Create.
+3. Copia la key (empieza por `gsk_…`). **Solo se muestra una vez.**
+4. En `backend/.env`:
+   ```env
+   GROQ_API_KEY=gsk_pega_aqui
+   GROQ_MODEL=llama-3.1-8b-instant
+   ```
+
+#### DeepSeek — recomendada para preguntas analíticas / detalladas
+
+1. Abre: **[https://platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys)**  
+   Registro: [https://platform.deepseek.com](https://platform.deepseek.com)
+2. **Create new API key** → copia el valor (suele empezar por `sk-…`).
+3. En `backend/.env`:
+   ```env
+   DEEPSEEK_API_KEY=sk-pega_aqui
+   DEEPSEEK_MODEL=deepseek-v4-flash
+   ```
+4. Nota: DeepSeek cobra por uso; necesitas balance/crédito en su plataforma para que responda en producción.
+
+#### Ollama — opcional (panel de comparación local, sin API key cloud)
+
+1. Instala Ollama: **[https://ollama.com](https://ollama.com)**
+2. En una terminal:
+   ```bash
+   ollama pull llama3.2
+   ollama serve
+   ```
+3. En `backend/.env` (valores por defecto ya vienen en `.env.example`):
+   ```env
+   OLLAMA_BASE_URL=http://127.0.0.1:11434
+   OLLAMA_MODEL=llama3.2
+   ```
+4. Ollama **no** entra al auto-route del Agente inteligente; solo al panel “Ollama” de la UI.
+
+#### Resumen rápido de enlaces
+
+| Proveedor | ¿Para qué en este proyecto? | Crear / obtener key |
+|-----------|-----------------------------|---------------------|
+| **Gemini** | Smart (default + fallback) + panel Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **Groq** | Smart (preguntas cortas) + panel Groq | [console.groq.com/keys](https://console.groq.com/keys) |
+| **DeepSeek** | Smart (analítico) + panel DeepSeek | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
+| **Ollama** | Solo panel local | [ollama.com](https://ollama.com) (sin key cloud) |
+
+**Mínimo para una demo del Smart:** `GEMINI_API_KEY` + `GROQ_API_KEY`.  
+**Recomendado en entrega:** esas dos + `DEEPSEEK_API_KEY`.
+
+---
+
+### 2.5 Configurar `backend/.env`
 
 Haz esto **antes** de `npm run dev`.
 
-#### A) Backend `.env` (API keys + puerto)
-
-1. Entra a la carpeta del backend:
+1. Entra al backend y crea el archivo desde la plantilla:
    ```bash
    cd backend
-   ```
-2. Crea el archivo de secrets a partir de la plantilla **o** usa el `.env` que te entregaron en el handoff:
-   ```bash
-   # Opción 1 — te pasaron el .env listo (recomendado en traspaso):
-   # Copia el archivo recibido a: backend/.env
-
-   # Opción 2 — crearlo desde cero:
    cp .env.example .env
    ```
-3. Abre `backend/.env` y asegúrate de tener **como mínimo**:
-   ```env
-   PORT=3001
-   GEOTRENDS_DOCUMENTS_ROOT=data
+   Si en el traspaso te pasaron un `.env` ya armado, cópialo directamente a `backend/.env` (y revisa que las keys sigan válidas).
 
-   GEMINI_API_KEY=...tu_key...
-   GROQ_API_KEY=...tu_key...
-   DEEPSEEK_API_KEY=...tu_key...
-   ```
-   - `PORT=3001` es obligatorio para alinear con el front (si falta, el código usa 4000 y el front no conecta).
-   - `GEOTRENDS_DOCUMENTS_ROOT=data` apunta a la carpeta de documentos relativa al backend.
-   - La config de Ollama solo hace falta si vas a probar ese panel (local).
+2. Abre `backend/.env` y complétalo. Ejemplo **completo** de referencia (sustituye los placeholders):
 
-> **Nunca** subas `backend/.env` a Git. Contiene secretos.
+```env
+PORT=3001
+GEOTRENDS_DOCUMENTS_ROOT=data
 
-#### B) Carpeta `backend/data/` (documentos / bibliotecas)
+# Gemini — https://aistudio.google.com/apikey
+GEMINI_API_KEY=TU_KEY_GEMINI
+GEMINI_MODEL=gemini-flash-latest
 
-Esta carpeta **no está en el repo**. La persona saliente debe dejarla en OneDrive (ZIP). Tú debes montarla así:
+# Groq — https://console.groq.com/keys
+GROQ_API_KEY=TU_KEY_GROQ
+GROQ_MODEL=llama-3.1-8b-instant
+# Opcional si Groq responde HTTP 413 con PDFs grandes:
+# GROQ_MAX_DOCUMENT_CHARS=12000
 
-1. Descarga el ZIP desde OneDrive (ej. `geotrends-documentos-data.zip`).
+# Ollama (opcional) — https://ollama.com
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2
+
+# DeepSeek — https://platform.deepseek.com/api_keys
+DEEPSEEK_API_KEY=TU_KEY_DEEPSEEK
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+3. Comprueba estos puntos:
+
+| Check | Por qué importa |
+|-------|-----------------|
+| `PORT=3001` | Si falta, el backend puede caer a **4000** y el front (que apunta a 3001) no conecta |
+| Keys sin espacios tras `=` | Con espacio, la API rechaza la autenticación |
+| Archivo llamado exactamente `.env` | No `.env.txt` ni solo editar `.env.example` |
+| **Nunca** subir `.env` a Git | Contiene secretos (ya está en `.gitignore`) |
+
+4. Cada vez que edites `.env`, **reinicia** el backend (`Ctrl+C` y otra vez `npm run dev`) para que cargue los valores nuevos.
+
+---
+
+### 2.6 Montar la carpeta `backend/data/` (documentos)
+
+Esta carpeta **no está en el repo**. Quien entrega el proyecto debe compartirla (ZIP en OneDrive u otro canal).
+
+1. Descarga el ZIP (ej. `geotrends-documentos-data.zip`).
 2. Descomprímelo de modo que la ruta final quede **exactamente**:
    ```
-   agentePrueba/backend/data/
+   agente/backend/data/
    ├── Ficha de Servicios/
    ├── Guia generica/
    └── Manuales/
    ```
-3. Comprobación rápida:
+3. Comprobación:
    ```bash
    ls backend/data
-   # Debe listar las bibliotecas (carpetas), no un "data" anidado raro tipo backend/data/data/...
+   # Debe listar las bibliotecas (carpetas), no un anidado raro tipo backend/data/data/...
    ```
+4. Si quedó `backend/data/data/...`, sube el contenido un nivel.
 
-Si quedó `backend/data/data/...` por un error al descomprimir, muévelo un nivel arriba.
-
-Variables relacionadas:
-- El backend lee `GEOTRENDS_DOCUMENTS_ROOT` (valor típico: `data`).
-- Cada **subcarpeta de primer nivel** dentro de `data/` aparece como **Biblioteca** en la UI.
+- `GEOTRENDS_DOCUMENTS_ROOT=data` apunta a esa carpeta (relativa al backend).
+- Cada **subcarpeta de primer nivel** = una **Biblioteca** en la UI.
+- Formatos soportados: `.pdf`, `.docx`, `.xlsx`, `.md`, `.txt` (no `.doc` antiguo).
 
 ---
 
-### Arranque local para probar (después de A y B)
+### 2.7 Frontend `.env.local` (casi siempre no toques nada)
+
+El archivo **ya viene en el repo**:
+
+```env
+NEXT_PUBLIC_AGENT_API_URL=http://localhost:3001/api/chat
+NEXT_PUBLIC_COURSE_ID=geotrends
+NEXT_PUBLIC_LESSON_ID=
+```
+
+Solo cámbialo si el backend corre en otro host/puerto. Las keys de LLM **no van aquí**: solo en `backend/.env`.
+
+---
+
+### 2.8 Ejecutar el proyecto (dos terminales)
 
 El frontend espera el backend en **`http://localhost:3001`**.
 
-**1) Backend**
+**Terminal 1 — Backend**
 
 ```bash
 cd backend
 npm install
-# backend/.env y backend/data/ ya deben existir (pasos A y B)
 npm run dev
 ```
 
-Debe imprimir algo como: `Agent backend running on http://localhost:3001`.
+Debe verse algo como: `Agent backend running on http://localhost:3001`.
 
-Comprueba: `GET http://localhost:3001/health` → `{ "ok": true }`.
+Health check: abre o haz GET a [http://localhost:3001/health](http://localhost:3001/health) → `{ "ok": true }`.
 
-**2) Frontend** (en otra terminal)
+**Terminal 2 — Frontend**
 
 ```bash
 cd frontend
 npm install
-# .env.local ya viene en el repo; no hace falta crear uno si usas puerto 3001
 npm run dev
 ```
 
-UI: `http://localhost:3000`.
+UI: [http://localhost:3000](http://localhost:3000).
 
-**3) Probar el flujo**
+#### Scripts útiles
 
-1. Elige una biblioteca → carpeta/archivo → documento.
-2. Debe verse el preview y el **Agente inteligente**.
-3. Pregunta corta (ej. “¿de qué trata?”) → suele ir a **Groq**.
-4. Pregunta analítica (ej. “explica en detalle…”) → **DeepSeek** o Gemini.
-5. Mira en la UI el badge del modelo y el motivo de routing.
+| Carpeta | Comando | Uso |
+|---------|---------|-----|
+| `backend/` | `npm run dev` | Desarrollo (tsx watch, recarga al cambiar código) |
+| `backend/` | `npm run build` + `npm start` | Producción (compila a `dist/`) |
+| `frontend/` | `npm run dev` | Next.js en modo desarrollo |
+| `frontend/` | `npm run build` + `npm start` | Next.js producción |
 
-> **Importante — puerto:** si `backend/.env` no define `PORT`, el código cae a **4000** (`index.ts`). El front espera **3001**. Siempre define `PORT=3001` en `.env`.
+---
 
-> **Fuente de verdad:** este documento + el PDF homónimo. El `README.md` es un resumen corto.
+### 2.9 Verificar que todo funciona
+
+1. En [http://localhost:3000](http://localhost:3000): elige **Biblioteca → carpeta/documento → documento activo**.
+2. Debe aparecer el preview y el bloque **Agente inteligente**.
+3. Pregunta corta (ej. *¿de qué trata?*) → suele ir a **Groq** (mira el badge / motivo de routing).
+4. Pregunta analítica (ej. *explica en detalle…*) → **DeepSeek** o Gemini.
+5. Si ves *“Falta configurar GROQ_API_KEY…”* (u otra): la key no está en `.env`, está vacía, tiene espacios, o no reiniciaste el backend.
+
+#### Errores típicos al arrancar
+
+| Síntoma | Qué hacer |
+|---------|-----------|
+| “No pude conectar con el backend…” | Backend apagado, o `PORT` ≠ 3001, o URL mal en `.env.local` |
+| Wizard sin bibliotecas | Falta `backend/data/` o `GEOTRENDS_DOCUMENTS_ROOT` |
+| “Falta configurar …_API_KEY” | Completa esa key en `backend/.env` y reinicia backend |
+| Auth rechazada / key inválida | Regenera la key en la consola del proveedor; quita espacios |
+| Groq 413 / fallback a Gemini | PDF muy grande; prueba `GROQ_MAX_DOCUMENT_CHARS=12000` |
+| DeepSeek no responde | Key o crédito en DeepSeek; si falta key, Smart cae a Gemini |
+
+> **Fuente de verdad:** este documento (+ PDF homónimo si está actualizado). El `README.md` es solo un resumen corto.
 
 ---
 
@@ -443,12 +591,14 @@ Patrón común en todos:
 
 #### Dónde sacar cada API key
 
-| Proveedor | URL típica |
-|-----------|------------|
-| Gemini | [Google AI Studio](https://aistudio.google.com/apikey) |
-| Groq | [console.groq.com/keys](https://console.groq.com/keys) |
-| DeepSeek | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
-| Ollama | No usa cloud key; instalar Ollama y `ollama pull llama3.2` |
+Pasos detallados (crear cuenta, copiar, pegar en `.env`): **[sección 2.4](#24-cómo-crear-las-api-keys-paso-a-paso--enlaces)**.
+
+| Proveedor | URL |
+|-----------|-----|
+| Gemini | [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| Groq | [https://console.groq.com/keys](https://console.groq.com/keys) |
+| DeepSeek | [https://platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
+| Ollama | [https://ollama.com](https://ollama.com) (sin cloud key; `ollama pull llama3.2`) |
 
 ### Notas por proveedor
 
@@ -556,19 +706,25 @@ CORS: el backend tiene `cors()` sin whitelist → en local funciona sin más.
 
 ---
 
-## 8. Variables de entorno (backend)
+## 8. Variables de entorno (backend) — referencia
 
-Plantilla: `backend/.env.example`
+Plantilla: `backend/.env.example`  
+**Guía paso a paso para crear keys y llenar el archivo:** [sección 2.4 y 2.5](#24-cómo-crear-las-api-keys-paso-a-paso--enlaces).
 
-| Variable | Para qué |
-|----------|----------|
-| `PORT` | Puerto HTTP (usar **3001** para alinear con el front) |
-| `GEOTRENDS_DOCUMENTS_ROOT` | Carpeta de docs (`data` relativo al backend) |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | Gemini |
-| `GROQ_API_KEY` / `GROQ_MODEL` | Groq |
-| `GROQ_MAX_DOCUMENT_CHARS` | Opcional: techo de chars del doc a Groq |
-| `DEEPSEEK_API_KEY` / `DEEPSEEK_MODEL` / `DEEPSEEK_API_URL` | DeepSeek |
-| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Ollama local |
+| Variable | Obligatoria | Para qué |
+|----------|-------------|----------|
+| `PORT` | Sí (usar **3001**) | Puerto HTTP; alinear con el front |
+| `GEOTRENDS_DOCUMENTS_ROOT` | Sí (`data`) | Carpeta de documentos relativa al backend |
+| `GEMINI_API_KEY` | Sí (Smart) | Auth Gemini — [crear key](https://aistudio.google.com/apikey) |
+| `GEMINI_MODEL` | No (default `gemini-flash-latest`) | Modelo Gemini |
+| `GROQ_API_KEY` | Sí (Smart rápido) | Auth Groq — [crear key](https://console.groq.com/keys) |
+| `GROQ_MODEL` | No (default `llama-3.1-8b-instant`) | Modelo Groq |
+| `GROQ_MAX_DOCUMENT_CHARS` | No | Techo de chars del doc enviado a Groq (útil ante HTTP 413) |
+| `DEEPSEEK_API_KEY` | Recomendada | Auth DeepSeek — [crear key](https://platform.deepseek.com/api_keys) |
+| `DEEPSEEK_MODEL` | No (default `deepseek-v4-flash`) | Modelo DeepSeek |
+| `DEEPSEEK_API_URL` | No | Override del endpoint Chat Completions |
+| `OLLAMA_BASE_URL` | Solo panel Ollama | Default `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL` | Solo panel Ollama | Default `llama3.2` |
 
 Para el **Agente inteligente** mínimo operativo:
 
@@ -576,7 +732,7 @@ Para el **Agente inteligente** mínimo operativo:
 2. `GROQ_API_KEY` (preguntas rápidas)
 3. `DEEPSEEK_API_KEY` (analítico; si falta, las complejas van a Gemini)
 
-Las keys **nunca** van al frontend: solo viven en `backend/.env`.
+Las keys **nunca** van al frontend: solo viven en `backend/.env`. Tras editar, reinicia el backend.
 
 ---
 
@@ -681,10 +837,10 @@ zip -r geotrends-documentos-data.zip data
 
 En el mensaje de traspaso escribe algo como:
 
-> 1. Clona el repo.  
-> 2. Pon el `.env` que te pasé en `backend/.env`.  
-> 3. Descarga el ZIP de OneDrive y déjalo como `backend/data/` (con las carpetas Biblioteca adentro).  
-> 4. Sigue la sección 2 del PDF de documentación.  
+> 1. Clona el repo: https://github.com/isabelasring/agente  
+> 2. Sigue la **sección 2** de `DOCUMENTACION-HANDOFF.md` (crear API keys + `.env` + `data/` + arranque).  
+> 3. Si te paso un `.env` ya armado, ponlo en `backend/.env` (o regenera las keys con los links de la §2.4).  
+> 4. Descarga el ZIP de documentos y déjalo como `backend/data/`.  
 > 5. `npm install` + `npm run dev` en `backend/` y en `frontend/`.
 
 ### 14.2 Checklist de traspaso humano
@@ -702,7 +858,8 @@ En el mensaje de traspaso escribe algo como:
 |---------|----------------|-------------|
 | Front: “No pude conectar con el backend…” | Backend apagado o puerto distinto | `npm run dev` en backend; `PORT=3001`; URL en `.env.local` |
 | Bibliotecas vacías en el wizard | Falta `backend/data/` o root mal configurado | `GEOTRENDS_DOCUMENTS_ROOT=data` y que existan subcarpetas |
-| “Falta configurar GEMINI_API_KEY…” | Key ausente o vacía | `backend/.env` |
+| “Falta configurar GEMINI_API_KEY…” (u otra) | Key ausente, vacía o con espacios tras `=` | `backend/.env`; ver §2.4–2.5; reiniciar backend |
+| Auth rechazada / key inválida | Key rota, mal copiada o con espacio | Regenerar en la consola del proveedor |
 | Respuestas de Groq fallan / fallback a Gemini | Payload grande (413) o key inválida | Logs `[smart]` / `[chat]`; `GROQ_API_KEY`; shrink en `askGroq.ts` |
 | Preguntas complejas siempre a Gemini | No hay DeepSeek | `DEEPSEEK_API_KEY` en `.env` |
 | Ollama no responde | Servicio local no corre | `ollama serve` + modelo `OLLAMA_MODEL` |
@@ -725,15 +882,18 @@ pandoc DOCUMENTACION-HANDOFF.md -t html5 -o /tmp/handoff-geobot.html --standalon
 
 ## 15. Checklist rápido para el nuevo responsable
 
-- [ ] Acceso al repo + `backend/.env` + carpeta `data/`
-- [ ] Clonar, `npm install` en `backend/` y `frontend/`
-- [ ] Confirmar `PORT=3001` y `GEOTRENDS_DOCUMENTS_ROOT=data` en `backend/.env`
+- [ ] Acceso al repo [isabelasring/agente](https://github.com/isabelasring/agente)
+- [ ] Leer **sección 2** completa de este documento
+- [ ] Crear keys: [Gemini](https://aistudio.google.com/apikey) · [Groq](https://console.groq.com/keys) · [DeepSeek](https://platform.deepseek.com/api_keys)
+- [ ] `cp backend/.env.example backend/.env` y pegar las keys **sin espacios** tras `=`
+- [ ] Confirmar `PORT=3001` y `GEOTRENDS_DOCUMENTS_ROOT=data`
+- [ ] Montar `backend/data/` (ZIP del traspaso)
 - [ ] Confirmar `frontend/.env.local` → `http://localhost:3001/api/chat`
-- [ ] `npm run dev` en ambos; abrir `http://localhost:3000`
+- [ ] `npm install` + `npm run dev` en `backend/` y `frontend/`
+- [ ] Abrir [http://localhost:3000](http://localhost:3000) y [http://localhost:3001/health](http://localhost:3001/health)
 - [ ] Ver bibliotecas en el wizard (si no, falta `data/`)
-- [ ] Pregunta corta → debería ir a **Groq** (badge + routingReason)
-- [ ] Pregunta analítica (“compara…”, “explica en detalle…”) → **DeepSeek** o Gemini
-- [ ] Leer: `providerRouter.ts`, `llm.ts`, `routes/chat.ts`, `SmartAgentPanel.tsx`
+- [ ] Pregunta corta → badge **Groq**; pregunta analítica → **DeepSeek** o Gemini
+- [ ] Leer código clave: `providerRouter.ts`, `llm.ts`, `routes/chat.ts`, `SmartAgentPanel.tsx`
 
 ---
 

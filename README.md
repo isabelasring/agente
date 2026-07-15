@@ -15,19 +15,28 @@ Tutor sobre documentos locales (PDF, DOCX, XLSX, MD, TXT) con varios LLMs y un *
 - **LLMs:** Gemini, Groq, DeepSeek, Ollama
 - **Documentos:** carpeta local `GEOTRENDS_DOCUMENTS_ROOT` (por defecto `backend/data/`)
 
-## Arranque rápido
+# Arranque rápido (detalle completo: DOCUMENTACION-HANDOFF.md §2)
 
-### 1) Backend (puerto 3001)
+### 1) Crear API keys
+
+| Proveedor | Link |
+|-----------|------|
+| Gemini | https://aistudio.google.com/apikey |
+| Groq | https://console.groq.com/keys |
+| DeepSeek | https://platform.deepseek.com/api_keys |
+
+### 2) Backend (puerto 3001)
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Agrega GEMINI_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY (según uses)
+# Pega GEMINI_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY (sin espacios tras =)
+# Monta también backend/data/ con las bibliotecas
 npm run dev
 ```
 
-### 2) Frontend (puerto 3000)
+### 3) Frontend (puerto 3000)
 
 ```bash
 cd frontend
